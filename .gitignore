@@ -30,7 +30,7 @@ wrangler.toml
 *.njsproj
 *.sln
 *.sw?
-
+.vscode
 # Logs
 logs
 *.log

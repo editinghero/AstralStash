@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ProtectedRoute } from "./components/ProtectedRoute";
+import { OfflineIndicator } from "./components/OfflineIndicator";
 import Index from "./pages/Index.tsx";
 import StashApp from "./pages/StashApp.tsx";
 import Auth from "./pages/Auth.tsx";
@@ -20,6 +21,7 @@ const App = () => (
       <TooltipProvider>
         <Toaster />
         <Sonner />
+        <OfflineIndicator />
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
