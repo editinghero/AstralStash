@@ -1,0 +1,154 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Stash Design System — warm, editorial, inviting */
+
+@layer base {
+  :root {
+    --background: 36 38% 97%;            /* warm cream #FAF7F2 */
+    --foreground: 210 38% 18%;           /* deep navy ink */
+
+    --card: 0 0% 100%;
+    --card-foreground: 210 38% 18%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 210 38% 18%;
+
+    --primary: 351 75% 65%;              /* coral/salmon pink */
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 351 90% 78%;
+
+    --secondary: 210 40% 22%;            /* deep navy */
+    --secondary-foreground: 36 38% 97%;
+
+    --muted: 30 25% 93%;
+    --muted-foreground: 210 15% 40%;
+
+    --accent: 351 80% 92%;               /* muted rose for tags */
+    --accent-foreground: 210 38% 18%;
+
+    --destructive: 0 75% 55%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 30 20% 88%;
+    --input: 30 20% 88%;
+    --ring: 351 75% 65%;
+
+    --radius: 1rem;
+
+    /* Pastel note card backgrounds */
+    --note-1: 30 60% 92%;   /* peach */
+    --note-2: 351 70% 93%;  /* rose */
+    --note-3: 180 40% 90%;  /* mint */
+    --note-4: 220 60% 93%;  /* sky */
+    --note-5: 50 70% 90%;   /* butter */
+    --note-6: 280 40% 93%;  /* lavender */
+
+    /* Gradients */
+    --gradient-warm: linear-gradient(135deg, hsl(30 80% 92%) 0%, hsl(351 80% 90%) 100%);
+    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary-glow)) 100%);
+    --gradient-mint: linear-gradient(180deg, hsl(180 50% 94%) 0%, hsl(200 60% 95%) 100%);
+
+    /* Shadows */
+    --shadow-soft: 0 4px 20px -4px hsl(210 30% 20% / 0.08);
+    --shadow-card: 0 8px 30px -8px hsl(210 30% 20% / 0.12);
+    --shadow-lift: 0 16px 40px -12px hsl(210 30% 20% / 0.18);
+    --shadow-pink: 0 8px 24px -8px hsl(var(--primary) / 0.45);
+
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+    --sidebar-background: 36 38% 97%;
+    --sidebar-foreground: 210 38% 18%;
+    --sidebar-primary: 351 75% 65%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 30 25% 93%;
+    --sidebar-accent-foreground: 210 38% 18%;
+    --sidebar-border: 30 20% 88%;
+    --sidebar-ring: 351 75% 65%;
+  }
+
+  .dark {
+    --background: 0 0% 8%;              /* #141414 */
+    --foreground: 36 22% 92%;           /* #F0EDE8 */
+    --card: 0 0% 12%;                   /* #1E1E1E */
+    --card-foreground: 36 22% 92%;
+    --popover: 0 0% 14%;                /* #242424 */
+    --popover-foreground: 36 22% 92%;
+    --primary: 351 75% 65%;
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 351 90% 78%;
+    --secondary: 36 22% 92%;            /* light text used as headings color */
+    --secondary-foreground: 0 0% 8%;
+    --muted: 0 0% 14%;
+    --muted-foreground: 0 0% 53%;       /* #888888 */
+    --accent: 351 30% 20%;
+    --accent-foreground: 36 22% 92%;
+    --destructive: 0 70% 55%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 18%;
+    --input: 0 0% 18%;
+    --ring: 351 75% 65%;
+    --sidebar-background: 0 0% 8%;
+    --sidebar-foreground: 36 22% 92%;
+    --sidebar-accent: 0 0% 14%;
+    --sidebar-accent-foreground: 36 22% 92%;
+    --sidebar-border: 0 0% 18%;
+  }
+}
+
+@layer base {
+  * { @apply border-border; }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Inter', system-ui, sans-serif;
+    font-feature-settings: "ss01", "cv11";
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+  h1, h2, h3, h4, .font-display {
+    font-family: 'Playfair Display', Georgia, serif;
+    letter-spacing: -0.02em;
+  }
+}
+
+@layer utilities {
+  .font-display { font-family: 'Playfair Display', Georgia, serif; }
+  .font-sans-body { font-family: 'Inter', system-ui, sans-serif; }
+
+  .masonry {
+    column-count: 1;
+    column-gap: 1.25rem;
+  }
+  @media (min-width: 640px) { .masonry { column-count: 2; } }
+  @media (min-width: 1024px) { .masonry { column-count: 3; } }
+  .masonry > * {
+    break-inside: avoid;
+    margin-bottom: 1.25rem;
+  }
+
+  .masonry-preview {
+    column-count: 2;
+    column-gap: 1rem;
+  }
+  @media (min-width: 768px) { .masonry-preview { column-count: 3; } }
+  @media (min-width: 1024px) { .masonry-preview { column-count: 4; } }
+
+  .hover-lift {
+    transition: var(--transition-smooth);
+  }
+  .hover-lift:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lift);
+  }
+
+  .gradient-warm { background: var(--gradient-warm); }
+  .gradient-primary { background: var(--gradient-primary); }
+  .gradient-mint { background: var(--gradient-mint); }
+
+  .shadow-soft { box-shadow: var(--shadow-soft); }
+  .shadow-card { box-shadow: var(--shadow-card); }
+  .shadow-lift { box-shadow: var(--shadow-lift); }
+  .shadow-pink { box-shadow: var(--shadow-pink); }
+
+  .text-balance { text-wrap: balance; }
+}
