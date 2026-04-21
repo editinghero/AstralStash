@@ -31,6 +31,7 @@ export interface StashItem {
   favicon?: string;
   content?: string;
   color?: string;
+  format?: 'md' | 'txt'; // For notes: markdown or plain text
   tags: string[];
   pinned: boolean;
   collection_id?: string | null;

@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import ReactMarkdown from "react-markdown";
-import { ExternalLink, Trash2, FileText, Lightbulb, Pin, RotateCcw, Pencil } from "lucide-react";
+import { ExternalLink, Trash2, FileText, Lightbulb, Pin, RotateCcw, Pencil, Maximize2 } from "lucide-react";
 import { StashItem, domainOf } from "@/lib/stash";
 import { Button } from "@/components/ui/button";
 
@@ -21,11 +21,12 @@ type Props = {
   onRestore?: (id: string) => void;
   onPurge?: (id: string) => void;
   onEdit?: (item: StashItem) => void;
+  onEnlarge?: (item: StashItem) => void;
   trash?: boolean;
   index?: number;
 };
 
-export const StashCard = ({ item, onDelete, onPin, onRestore, onPurge, onEdit, trash, index = 0 }: Props) => {
+export const StashCard = ({ item, onDelete, onPin, onRestore, onPurge, onEdit, onEnlarge, trash, index = 0 }: Props) => {
   const isLink = item.type === "link";
   const isIdea = item.type === "idea";
   const isNote = item.type === "note";
@@ -124,7 +125,11 @@ export const StashCard = ({ item, onDelete, onPin, onRestore, onPurge, onEdit, t
               className={`${isIdea ? "mt-2 text-base" : "mt-3 text-sm"} line-clamp-6 prose prose-sm max-w-none prose-headings:font-display prose-p:my-1 prose-a:text-primary break-words`}
               style={{ color: `${pastelInk}cc` }}
             >
-              <ReactMarkdown>{item.content}</ReactMarkdown>
+              {isNote && item.format === "txt" ? (
+                <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed">{item.content}</pre>
+              ) : (
+                <ReactMarkdown>{item.content}</ReactMarkdown>
+              )}
             </div>
           )}
 
@@ -162,6 +167,16 @@ export const StashCard = ({ item, onDelete, onPin, onRestore, onPurge, onEdit, t
                       aria-label={item.pinned ? "Unpin" : "Pin"}
                     >
                       <Pin className={`w-3.5 h-3.5 ${item.pinned ? "fill-current" : ""}`} />
+                    </Button>
+                  )}
+                  {(isNote || isIdea) && onEnlarge && (
+                    <Button 
+                      size="icon" 
+                      variant="ghost" 
+                      onClick={() => onEnlarge(item)}
+                      className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity hover:text-primary" 
+                      aria-label="Enlarge">
+                      <Maximize2 className="w-3.5 h-3.5" />
                     </Button>
                   )}
                   {onEdit && (

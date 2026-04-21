@@ -15,6 +15,7 @@ import { Logo } from "@/components/Logo";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { StashCard } from "@/components/StashCard";
 import { AddItemDialog } from "@/components/AddItemDialog";
+import { EnlargedViewDialog } from "@/components/EnlargedViewDialog";
 import { CommandPalette, PaletteAction } from "@/components/CommandPalette";
 import { CollectionDialog } from "@/components/CollectionDialog";
 import { BookmarkletDialog } from "@/components/BookmarkletDialog";
@@ -53,6 +54,8 @@ const StashApp = () => {
   const [collectionOpen, setCollectionOpen] = useState(false);
   const [editingCollection, setEditingCollection] = useState<Collection | null>(null);
   const [bookmarkletOpen, setBookmarkletOpen] = useState(false);
+  const [enlargedItem, setEnlargedItem] = useState<StashItem | null>(null);
+  const [enlargedOpen, setEnlargedOpen] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const { theme, toggle: toggleTheme } = useTheme();
   const { user } = useAuth();
@@ -270,6 +273,7 @@ const StashApp = () => {
     setEditing(null); setInitialUrl(undefined); setInitialTab(tab); setOpen(true); setSidebarOpen(false);
   };
   const openEdit = (item: StashItem) => { setEditing(item); setOpen(true); };
+  const openEnlarged = (item: StashItem) => { setEnlargedItem(item); setEnlargedOpen(true); };
 
   const importJson = () => fileRef.current?.click();
   const onFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -483,40 +487,81 @@ const StashApp = () => {
               <SelectItem value="type">By type</SelectItem>
             </SelectContent>
           </Select>
-          <ThemeToggle />
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="rounded-full">
-                <div 
-                  className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium"
-                  style={{ backgroundColor: user?.profile_color || '#FFF0F3', color: '#1A2B3C' }}
-                >
-                  {user?.name?.charAt(0).toUpperCase() || 'U'}
+          <div className="hidden sm:flex items-center gap-3">
+            <ThemeToggle />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="rounded-full">
+                  <div 
+                    className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium"
+                    style={{ backgroundColor: user?.profile_color || '#FFF0F3', color: '#1A2B3C' }}
+                  >
+                    {user?.name?.charAt(0).toUpperCase() || 'U'}
+                  </div>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <div className="px-2 py-1.5 text-sm">
+                  <div className="font-medium">{user?.name}</div>
+                  <div className="text-xs text-muted-foreground">{user?.email}</div>
                 </div>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <div className="px-2 py-1.5 text-sm">
-                <div className="font-medium">{user?.name}</div>
-                <div className="text-xs text-muted-foreground">{user?.email}</div>
-              </div>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem asChild>
-                <Link to="/profile" className="cursor-pointer">
-                  <UserIcon className="w-4 h-4 mr-2" />
-                  Profile Settings
-                </Link>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link to="/profile" className="cursor-pointer">
+                    <UserIcon className="w-4 h-4 mr-2" />
+                    Profile Settings
+                  </Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+          <div className="sm:hidden flex items-center gap-2 ml-auto">
+            <ThemeToggle />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="rounded-full">
+                  <div 
+                    className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium"
+                    style={{ backgroundColor: user?.profile_color || '#FFF0F3', color: '#1A2B3C' }}
+                  >
+                    {user?.name?.charAt(0).toUpperCase() || 'U'}
+                  </div>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <div className="px-2 py-1.5 text-sm">
+                  <div className="font-medium">{user?.name}</div>
+                  <div className="text-xs text-muted-foreground">{user?.email}</div>
+                </div>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link to="/profile" className="cursor-pointer">
+                    <UserIcon className="w-4 h-4 mr-2" />
+                    Profile Settings
+                  </Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
-        <div className="container pb-3 sm:hidden">
+        <div className="container pb-3 sm:hidden space-y-2">
           <div className="relative">
             <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <Input data-search value={query} onChange={(e) => setQuery(e.target.value)}
               placeholder="Search your stash…"
               className="pl-11 rounded-full bg-muted/60 border-transparent h-11" />
           </div>
+          <Select value={sort} onValueChange={(v) => setSort(v as Sort)}>
+            <SelectTrigger className="rounded-full w-full h-11">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="newest">Newest</SelectItem>
+              <SelectItem value="oldest">Oldest</SelectItem>
+              <SelectItem value="title">A → Z</SelectItem>
+              <SelectItem value="type">By type</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </header>
 
@@ -594,7 +639,7 @@ const StashApp = () => {
                       <AnimatePresence>
                         {pinnedSection.map((item, i) => (
                           <StashCard key={item.id} item={item} index={i}
-                            onDelete={softDelete} onPin={togglePin} onEdit={openEdit} />
+                            onDelete={softDelete} onPin={togglePin} onEdit={openEdit} onEnlarge={openEnlarged} />
                         ))}
                       </AnimatePresence>
                     </div>
@@ -614,6 +659,7 @@ const StashApp = () => {
                             onDelete={softDelete}
                             onPin={filter === "trash" ? undefined : togglePin}
                             onEdit={filter === "trash" ? undefined : openEdit}
+                            onEnlarge={filter === "trash" ? undefined : openEnlarged}
                             onRestore={restore}
                             onPurge={purge}
                             trash={filter === "trash"}
@@ -666,6 +712,15 @@ const StashApp = () => {
       />
 
       <BookmarkletDialog open={bookmarkletOpen} onOpenChange={setBookmarkletOpen} />
+
+      <EnlargedViewDialog
+        item={enlargedItem}
+        open={enlargedOpen}
+        onOpenChange={setEnlargedOpen}
+        onEdit={openEdit}
+        onPin={togglePin}
+        onDelete={softDelete}
+      />
 
       <Dialog open={shortcutsOpen} onOpenChange={setShortcutsOpen}>
         <DialogContent className="rounded-2xl sm:max-w-md">

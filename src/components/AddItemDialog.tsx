@@ -4,7 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Link2, FileText, Lightbulb, Loader2, Eye, Pencil, Pin, X, Bold, Italic, Heading2, List, Code, Link as LinkIcon, FolderOpen } from "lucide-react";
+import { Link2, FileText, Lightbulb, Loader2, Eye, Pencil, Pin, X, Bold, Italic, Heading2, List, Code, Link as LinkIcon, FolderOpen, Quote } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -106,9 +106,11 @@ export const AddItemDialog = ({ open, onOpenChange, onAdd, onUpdate, initialUrl,
   const [noteTitle, setNoteTitle] = useState("");
   const [noteBody, setNoteBody] = useState("");
   const [noteColor, setNoteColor] = useState(NOTE_COLORS[0]);
+  const [noteFormat, setNoteFormat] = useState<"md" | "txt">("md");
   const [preview, setPreview] = useState(false);
   const noteRef = useRef<HTMLTextAreaElement>(null);
 
+  const [ideaTitle, setIdeaTitle] = useState("");
   const [ideaText, setIdeaText] = useState("");
 
   const isEdit = !!editing;
@@ -130,16 +132,18 @@ export const AddItemDialog = ({ open, onOpenChange, onAdd, onUpdate, initialUrl,
         setNoteTitle(editing.title);
         setNoteBody(editing.content || "");
         setNoteColor(editing.color || NOTE_COLORS[0]);
+        setNoteFormat(editing.format || "md");
       } else {
-        setIdeaText(editing.content || editing.title);
+        setIdeaTitle(editing.title === "Quick idea" ? "" : editing.title);
+        setIdeaText(editing.content || "");
       }
     } else {
       setTab(initialUrl ? "link" : initialTab);
       setTags([]); setPinned(false); setCollectionId(null);
       setUrl(initialUrl ?? "");
       setLinkTitle(""); setLinkDesc(""); setLinkImage(""); setFavicon(undefined);
-      setNoteTitle(""); setNoteBody(""); setNoteColor(NOTE_COLORS[0]); setPreview(false);
-      setIdeaText("");
+      setNoteTitle(""); setNoteBody(""); setNoteColor(NOTE_COLORS[0]); setNoteFormat("md"); setPreview(false);
+      setIdeaTitle(""); setIdeaText("");
       if (initialUrl) void loadMeta(initialUrl);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -188,15 +192,17 @@ export const AddItemDialog = ({ open, onOpenChange, onAdd, onUpdate, initialUrl,
     commit({
       ...baseItem(), type: "note",
       title: noteTitle.trim() || "Untitled note",
-      content: noteBody, color: noteColor,
+      content: noteBody, 
+      color: noteColor,
+      format: noteFormat,
     });
   };
   const saveIdea = () => {
     if (!ideaText.trim()) return toast.error("Write your idea first");
-    const firstLine = ideaText.split("\n")[0].slice(0, 80);
+    const finalTitle = ideaTitle.trim() || "Quick idea";
     commit({
       ...baseItem(), type: "idea",
-      title: firstLine || "Quick idea",
+      title: finalTitle,
       content: ideaText,
       color: editing?.color || randomNoteColor(),
     });
@@ -284,25 +290,51 @@ export const AddItemDialog = ({ open, onOpenChange, onAdd, onUpdate, initialUrl,
             <Input autoFocus placeholder="Title" value={noteTitle}
               onChange={(e) => setNoteTitle(e.target.value)}
               className="rounded-xl font-display text-lg" />
-            <div className="flex items-center justify-between flex-wrap gap-2">
-              <div className="flex items-center gap-1">
-                <Button size="sm" variant="ghost" onClick={() => wrapMd("**")} className="h-8 w-8 p-0"><Bold className="w-3.5 h-3.5" /></Button>
-                <Button size="sm" variant="ghost" onClick={() => wrapMd("*")} className="h-8 w-8 p-0"><Italic className="w-3.5 h-3.5" /></Button>
-                <Button size="sm" variant="ghost" onClick={() => wrapMd("\n## ", "")} className="h-8 w-8 p-0"><Heading2 className="w-3.5 h-3.5" /></Button>
-                <Button size="sm" variant="ghost" onClick={() => wrapMd("\n- ", "")} className="h-8 w-8 p-0"><List className="w-3.5 h-3.5" /></Button>
-                <Button size="sm" variant="ghost" onClick={() => wrapMd("`")} className="h-8 w-8 p-0"><Code className="w-3.5 h-3.5" /></Button>
-                <Button size="sm" variant="ghost" onClick={() => wrapMd("[", "](url)")} className="h-8 w-8 p-0"><LinkIcon className="w-3.5 h-3.5" /></Button>
-              </div>
-              <Button size="sm" variant="ghost" onClick={() => setPreview((p) => !p)} className="rounded-lg gap-1.5 h-7 text-xs">
-                {preview ? <><Pencil className="w-3 h-3" /> Edit</> : <><Eye className="w-3 h-3" /> Preview</>}
+            
+            {/* Format Toggle */}
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground">Format:</span>
+              <Button
+                size="sm"
+                variant={noteFormat === "md" ? "default" : "outline"}
+                onClick={() => setNoteFormat("md")}
+                className="h-7 text-xs rounded-lg"
+              >
+                Markdown
+              </Button>
+              <Button
+                size="sm"
+                variant={noteFormat === "txt" ? "default" : "outline"}
+                onClick={() => setNoteFormat("txt")}
+                className="h-7 text-xs rounded-lg"
+              >
+                Plain Text
               </Button>
             </div>
-            {preview ? (
-              <div className="min-h-[200px] rounded-xl border bg-muted/30 p-4 prose prose-sm max-w-none dark:prose-invert prose-headings:font-display prose-a:text-primary animate-fade-in">
+
+            {noteFormat === "md" && (
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <div className="flex items-center gap-1">
+                  <Button size="sm" variant="ghost" onClick={() => wrapMd("**")} className="h-8 w-8 p-0"><Bold className="w-3.5 h-3.5" /></Button>
+                  <Button size="sm" variant="ghost" onClick={() => wrapMd("*")} className="h-8 w-8 p-0"><Italic className="w-3.5 h-3.5" /></Button>
+                  <Button size="sm" variant="ghost" onClick={() => wrapMd("\n## ", "")} className="h-8 w-8 p-0"><Heading2 className="w-3.5 h-3.5" /></Button>
+                  <Button size="sm" variant="ghost" onClick={() => wrapMd("\n- ", "")} className="h-8 w-8 p-0"><List className="w-3.5 h-3.5" /></Button>
+                  <Button size="sm" variant="ghost" onClick={() => wrapMd("`")} className="h-8 w-8 p-0"><Code className="w-3.5 h-3.5" /></Button>
+                  <Button size="sm" variant="ghost" onClick={() => wrapMd("[", "](url)")} className="h-8 w-8 p-0"><LinkIcon className="w-3.5 h-3.5" /></Button>
+                  <Button size="sm" variant="ghost" onClick={() => wrapMd("\n> ", "")} className="h-8 w-8 p-0" title="Quote"><Quote className="w-3.5 h-3.5" /></Button>
+                </div>
+                <Button size="sm" variant="ghost" onClick={() => setPreview((p) => !p)} className="rounded-lg gap-1.5 h-7 text-xs">
+                  {preview ? <><Pencil className="w-3 h-3" /> Edit</> : <><Eye className="w-3 h-3" /> Preview</>}
+                </Button>
+              </div>
+            )}
+
+            {preview && noteFormat === "md" ? (
+              <div className="min-h-[200px] rounded-xl border bg-muted/30 p-4 prose prose-sm max-w-none dark:prose-invert prose-headings:font-display prose-a:text-primary prose-blockquote:border-l-primary prose-blockquote:bg-primary/5 prose-blockquote:italic prose-blockquote:font-serif animate-fade-in">
                 <ReactMarkdown>{noteBody || "*Nothing to preview yet…*"}</ReactMarkdown>
               </div>
             ) : (
-              <Textarea ref={noteRef} placeholder="Write your note in **markdown**…"
+              <Textarea ref={noteRef} placeholder={noteFormat === "md" ? "Write your note in **markdown**…" : "Write your note in plain text…"}
                 value={noteBody} onChange={(e) => setNoteBody(e.target.value)}
                 className="rounded-xl min-h-[200px] font-mono text-sm" />
             )}
@@ -327,10 +359,13 @@ export const AddItemDialog = ({ open, onOpenChange, onAdd, onUpdate, initialUrl,
           </TabsContent>
 
           <TabsContent value="idea" className="space-y-4 mt-4">
+            <Input placeholder="Title (optional)" value={ideaTitle}
+              onChange={(e) => setIdeaTitle(e.target.value)}
+              className="rounded-xl font-display text-lg" />
             <Textarea autoFocus placeholder="What's on your mind?"
               value={ideaText} onChange={(e) => setIdeaText(e.target.value)}
               className="rounded-xl min-h-[180px] font-display text-xl leading-snug" />
-            <p className="text-xs text-muted-foreground">First line becomes the title. A pastel color is auto-assigned.</p>
+            <p className="text-xs text-muted-foreground">Leave title blank to auto-generate "Quick idea". A pastel color is auto-assigned.</p>
             <CollectionPicker value={collectionId} onChange={setCollectionId} collections={collections} />
             <TagInput tags={tags} setTags={setTags} />
             <div className="flex items-center justify-between pt-2">

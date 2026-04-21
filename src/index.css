@@ -151,4 +151,38 @@
   .shadow-pink { box-shadow: var(--shadow-pink); }
 
   .text-balance { text-wrap: balance; }
+
+  /* Stylish blockquotes for markdown */
+  .prose blockquote {
+    @apply border-l-4 border-primary/40 bg-primary/5 pl-4 pr-3 py-2 my-4 italic font-serif text-base;
+    quotes: """ """ "'" "'";
+  }
+  .prose blockquote::before {
+    content: open-quote;
+    @apply text-primary text-3xl font-serif leading-none mr-1 float-left;
+  }
+  .prose blockquote p {
+    @apply inline;
+  }
+
+  /* Custom scrollbar for enlarged dialog */
+  .enlarged-dialog-scroll::-webkit-scrollbar {
+    width: 6px;
+  }
+  .enlarged-dialog-scroll::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .enlarged-dialog-scroll::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.4);
+    border-radius: 3px;
+  }
+  .enlarged-dialog-scroll::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.6);
+  }
+  
+  /* Firefox scrollbar */
+  .enlarged-dialog-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.4) transparent;
+  }
 }

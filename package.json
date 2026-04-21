@@ -13,6 +13,8 @@
     "test:watch": "vitest",
     "worker:dev": "wrangler dev workers/index.ts",
     "worker:deploy": "wrangler deploy",
+    "pages:deploy": "npm run build && wrangler pages deploy dist --project-name=astralstash",
+    "deploy:all": "npm run build && wrangler pages deploy dist --project-name=astralstash && wrangler deploy",
     "db:init": "wrangler d1 execute astralstash --file=./workers/schema.sql",
     "db:migrate": "wrangler d1 execute astralstash --file=./workers/schema.sql",
     "setup": "bash scripts/setup-db.sh"

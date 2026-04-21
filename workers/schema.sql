@@ -50,6 +50,7 @@ CREATE TABLE IF NOT EXISTS stash_items (
   favicon TEXT,
   content TEXT,
   color TEXT,
+  format TEXT CHECK(format IN ('md', 'txt')), -- For notes: markdown or plain text
   tags TEXT, -- JSON array
   pinned INTEGER DEFAULT 0,
   collection_id TEXT,

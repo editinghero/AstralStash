@@ -40,13 +40,13 @@ export async function handleCreateItem(request: Request, env: Env): Promise<Resp
     await env.DB.prepare(`
       INSERT INTO stash_items (
         id, user_id, type, title, url, description, image, favicon,
-        content, color, tags, pinned, collection_id, deleted, deleted_at,
+        content, color, format, tags, pinned, collection_id, deleted, deleted_at,
         created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
       id, auth.userId, item.type, item.title,
       item.url || null, item.description || null, item.image || null, item.favicon || null,
-      item.content || null, item.color || null, JSON.stringify(item.tags || []),
+      item.content || null, item.color || null, item.format || null, JSON.stringify(item.tags || []),
       item.pinned ? 1 : 0, item.collection_id || null, 0, null, now, now
     ).run();
 
@@ -110,6 +110,10 @@ export async function handleUpdateItem(request: Request, env: Env, itemId: strin
     if (updates.color !== undefined) {
       fields.push('color = ?');
       values.push(updates.color || null);
+    }
+    if (updates.format !== undefined) {
+      fields.push('format = ?');
+      values.push(updates.format || null);
     }
     if (updates.tags !== undefined) {
       fields.push('tags = ?');
@@ -324,6 +328,7 @@ function parseStashItem(row: any): StashItem {
     favicon: row.favicon,
     content: row.content,
     color: row.color,
+    format: row.format,
     tags: row.tags ? JSON.parse(row.tags) : [],
     pinned: Boolean(row.pinned),
     collection_id: row.collection_id,

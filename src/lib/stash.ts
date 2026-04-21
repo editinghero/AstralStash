@@ -10,6 +10,7 @@ export type StashItem = {
   favicon?: string;
   content?: string;
   color?: string;
+  format?: "md" | "txt"; // For notes: markdown or plain text
   tags: string[];
   pinned: boolean;
   collectionId?: string | null;
