@@ -94,6 +94,41 @@ export default {
         });
       }
 
+      // Metadata proxy
+      if (path === '/api/meta' && method === 'GET') {
+        const fetchUrl = url.searchParams.get('url');
+        if (!fetchUrl) {
+          return new Response(JSON.stringify({ error: 'URL required' }), {
+            status: 400,
+            headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+          });
+        }
+
+        try {
+          const res = await fetch(fetchUrl, {
+            headers: {
+              'User-Agent': 'AstralStash/1.0 (Link Preview Bot)',
+            },
+            cf: {
+              cacheTtl: 3600,
+              cacheEverything: true,
+            },
+          } as any);
+          const html = await res.text();
+          return new Response(JSON.stringify({ contents: html }), {
+            headers: {
+              'Content-Type': 'application/json',
+              'Access-Control-Allow-Origin': '*',
+            },
+          });
+        } catch (error) {
+          return new Response(JSON.stringify({ error: 'Failed to fetch' }), {
+            status: 500,
+            headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+          });
+        }
+      }
+
       return new Response(JSON.stringify({ error: 'Not found' }), {
         status: 404,
         headers: { 'Content-Type': 'application/json' },

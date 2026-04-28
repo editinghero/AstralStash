@@ -236,45 +236,55 @@ export const AddItemDialog = ({ open, onOpenChange, onAdd, onUpdate, initialUrl,
           </TabsList>
 
           <TabsContent value="link" className="space-y-4 mt-4">
-            <div className="flex gap-2">
-              <Input autoFocus placeholder="https://example.com" value={url}
-                onChange={(e) => setUrl(e.target.value)}
-                onBlur={() => url && !isEdit && loadMeta(url)}
-                onKeyDown={(e) => { if (e.key === "Enter") loadMeta(url); }}
-                className="rounded-xl" />
-              <Button onClick={() => loadMeta(url)} variant="secondary" className="rounded-xl shrink-0">
-                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Fetch"}
-              </Button>
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-muted-foreground ml-1">URL</label>
+              <div className="flex gap-2">
+                <Input autoFocus placeholder="https://example.com" value={url}
+                  onChange={(e) => setUrl(e.target.value)}
+                  onBlur={() => url && !isEdit && loadMeta(url)}
+                  onKeyDown={(e) => { if (e.key === "Enter") loadMeta(url); }}
+                  className="rounded-xl" />
+                <Button onClick={() => loadMeta(url)} variant="secondary" className="rounded-xl shrink-0">
+                  {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Fetch"}
+                </Button>
+              </div>
             </div>
 
-            {(loading || linkTitle || linkImage) && (
-              <div className="rounded-2xl border bg-muted/40 p-3 flex gap-3 animate-fade-in">
-                {linkImage ? (
-                  <img src={linkImage} alt="" className="w-24 h-24 rounded-xl object-cover shrink-0"
-                    onError={(e) => (e.currentTarget.style.display = "none")} />
-                ) : (
-                  <div className="w-24 h-24 rounded-xl gradient-warm shrink-0 flex items-center justify-center">
-                    <Link2 className="w-6 h-6 text-primary" />
-                  </div>
-                )}
-                <div className="min-w-0 flex-1 space-y-1.5">
-                  {loading ? (
-                    <div className="text-sm text-muted-foreground">Fetching preview…</div>
+            <div className="grid sm:grid-cols-[1fr_120px] gap-4">
+              <div className="space-y-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-muted-foreground ml-1">Title</label>
+                  <Input value={linkTitle} onChange={(e) => setLinkTitle(e.target.value)} placeholder="Site title" className="rounded-xl font-display" />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-muted-foreground ml-1">Note / Description</label>
+                  <Input value={linkDesc} onChange={(e) => setLinkDesc(e.target.value)} placeholder="Add a small note…" className="rounded-xl" />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-muted-foreground ml-1">Preview</label>
+                <div className="relative aspect-square rounded-xl overflow-hidden border bg-muted/40 flex items-center justify-center group">
+                  {linkImage ? (
+                    <img src={linkImage} alt="" className="w-full h-full object-cover animate-fade-in"
+                      onError={(e) => (e.currentTarget.style.display = "none")} />
                   ) : (
-                    <>
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        {favicon && <img src={favicon} className="w-3.5 h-3.5" alt="" />}
-                        <span className="truncate">{url ? domainOf(url) : ""}</span>
-                      </div>
-                      <Input value={linkTitle} onChange={(e) => setLinkTitle(e.target.value)} placeholder="Title" className="rounded-lg h-9 font-display" />
-                      <Input value={linkDesc} onChange={(e) => setLinkDesc(e.target.value)} placeholder="Description" className="rounded-lg h-8 text-xs" />
-                    </>
+                    <Link2 className="w-8 h-8 text-muted-foreground/40" />
+                  )}
+                  {loading && (
+                    <div className="absolute inset-0 bg-background/40 backdrop-blur-[1px] flex items-center justify-center">
+                      <Loader2 className="w-5 h-5 animate-spin text-primary" />
+                    </div>
                   )}
                 </div>
               </div>
-            )}
+            </div>
 
-            <Input value={linkImage} onChange={(e) => setLinkImage(e.target.value)} placeholder="Image URL (optional)" className="rounded-xl" />
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground ml-1">Image URL</label>
+              <Input value={linkImage} onChange={(e) => setLinkImage(e.target.value)} placeholder="https://example.com/image.jpg" className="rounded-xl" />
+            </div>
+
             <CollectionPicker value={collectionId} onChange={setCollectionId} collections={collections} />
             <TagInput tags={tags} setTags={setTags} />
             <div className="flex items-center justify-between pt-2">

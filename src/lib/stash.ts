@@ -94,33 +94,53 @@ export function faviconFor(url: string) {
 
 export async function fetchLinkMeta(url: string): Promise<Partial<StashItem>> {
   const fallback: Partial<StashItem> = { title: domainOf(url), url, favicon: faviconFor(url) };
-  try {
-    const proxy = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
-    const res = await fetch(proxy);
-    if (!res.ok) return fallback;
-    const data = await res.json();
-    const html: string = data.contents || "";
-    const pick = (re: RegExp) => { const m = html.match(re); return m ? m[1].trim() : undefined; };
-    const title =
-      pick(/<meta[^>]+property=["']og:title["'][^>]+content=["']([^"']+)["']/i) ||
-      pick(/<meta[^>]+name=["']twitter:title["'][^>]+content=["']([^"']+)["']/i) ||
-      pick(/<title[^>]*>([^<]+)<\/title>/i) || domainOf(url);
-    const description =
-      pick(/<meta[^>]+property=["']og:description["'][^>]+content=["']([^"']+)["']/i) ||
-      pick(/<meta[^>]+name=["']description["'][^>]+content=["']([^"']+)["']/i) ||
-      pick(/<meta[^>]+name=["']twitter:description["'][^>]+content=["']([^"']+)["']/i);
-    let image =
-      pick(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i) ||
-      pick(/<meta[^>]+name=["']twitter:image["'][^>]+content=["']([^"']+)["']/i);
-    if (image && image.startsWith("/")) {
-      try { const u = new URL(url); image = `${u.origin}${image}`; } catch {/* noop */}
+
+  const tryAllOrigins = async () => {
+    try {
+      const allorigins = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+      const res = await fetch(allorigins);
+      if (!res.ok) return fallback;
+      const data = await res.json();
+      return parseMeta(data.contents || "", url);
+    } catch {
+      return fallback;
     }
-    return {
-      title: decodeHtml(title),
-      description: description ? decodeHtml(description) : undefined,
-      image, url, favicon: faviconFor(url),
-    };
-  } catch { return fallback; }
+  };
+
+  try {
+    const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:8787/api';
+    const proxy = `${apiBase}/meta?url=${encodeURIComponent(url)}`;
+    const res = await fetch(proxy);
+    if (!res.ok) return await tryAllOrigins();
+
+    const data = await res.json();
+    return parseMeta(data.contents || "", url);
+  } catch {
+    return await tryAllOrigins();
+  }
+}
+
+function parseMeta(html: string, url: string): Partial<StashItem> {
+  const pick = (re: RegExp) => { const m = html.match(re); return m ? m[1].trim() : undefined; };
+  const title =
+    pick(/<meta[^>]+property=["']og:title["'][^>]+content=["']([^"']+)["']/i) ||
+    pick(/<meta[^>]+name=["']twitter:title["'][^>]+content=["']([^"']+)["']/i) ||
+    pick(/<title[^>]*>([^<]+)<\/title>/i) || domainOf(url);
+  const description =
+    pick(/<meta[^>]+property=["']og:description["'][^>]+content=["']([^"']+)["']/i) ||
+    pick(/<meta[^>]+name=["']description["'][^>]+content=["']([^"']+)["']/i) ||
+    pick(/<meta[^>]+name=["']twitter:description["'][^>]+content=["']([^"']+)["']/i);
+  let image =
+    pick(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i) ||
+    pick(/<meta[^>]+name=["']twitter:image["'][^>]+content=["']([^"']+)["']/i);
+  if (image && image.startsWith("/")) {
+    try { const u = new URL(url); image = `${u.origin}${image}`; } catch {/* noop */}
+  }
+  return {
+    title: decodeHtml(title || domainOf(url)),
+    description: description ? decodeHtml(description) : undefined,
+    image, url, favicon: faviconFor(url),
+  };
 }
 
 function decodeHtml(s: string) {
