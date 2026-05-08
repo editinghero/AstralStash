@@ -34,6 +34,7 @@ const VERSION = "3";
 
 export const NOTE_COLORS = [
   "#FFF0F3", "#F0F4FF", "#F0FFF4", "#FFFBF0", "#F5F0FF", "#FFF1E6",
+  "#DFE7FD", "#E2ECE9", "#EAE4E9", "#BEE1E6",
 ];
 
 export const randomNoteColor = () =>
@@ -92,35 +93,80 @@ export function faviconFor(url: string) {
   } catch { return undefined; }
 }
 
-export async function fetchLinkMeta(url: string): Promise<Partial<StashItem>> {
-  const fallback: Partial<StashItem> = { title: domainOf(url), url, favicon: faviconFor(url) };
+export async function fetchLinkMeta(url: string, signal?: AbortSignal): Promise<Partial<StashItem>> {
+  const fallback: Partial<StashItem> = { title: capitalizeFirst(domainOf(url)), url, favicon: faviconFor(url) };
+
   try {
-    const proxy = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
-    const res = await fetch(proxy);
-    if (!res.ok) return fallback;
-    const data = await res.json();
-    const html: string = data.contents || "";
-    const pick = (re: RegExp) => { const m = html.match(re); return m ? m[1].trim() : undefined; };
-    const title =
-      pick(/<meta[^>]+property=["']og:title["'][^>]+content=["']([^"']+)["']/i) ||
-      pick(/<meta[^>]+name=["']twitter:title["'][^>]+content=["']([^"']+)["']/i) ||
-      pick(/<title[^>]*>([^<]+)<\/title>/i) || domainOf(url);
-    const description =
-      pick(/<meta[^>]+property=["']og:description["'][^>]+content=["']([^"']+)["']/i) ||
-      pick(/<meta[^>]+name=["']description["'][^>]+content=["']([^"']+)["']/i) ||
-      pick(/<meta[^>]+name=["']twitter:description["'][^>]+content=["']([^"']+)["']/i);
-    let image =
-      pick(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i) ||
-      pick(/<meta[^>]+name=["']twitter:image["'][^>]+content=["']([^"']+)["']/i);
-    if (image && image.startsWith("/")) {
-      try { const u = new URL(url); image = `${u.origin}${image}`; } catch {/* noop */}
+    // Use AllOrigins as primary method since we don't have a meta endpoint
+    const allorigins = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+    const res = await fetch(allorigins, { signal });
+    
+    if (!res.ok) {
+      console.error('AllOrigins fetch failed:', res.status);
+      return fallback;
     }
+    
+    const data = await res.json();
+    
+    if (!data.contents) {
+      console.error('No contents in AllOrigins response');
+      return fallback;
+    }
+    
+    return parseMeta(data.contents, url);
+  } catch (error: any) {
+    if (error.name === 'AbortError') {
+      throw error;
+    }
+    console.error('Error fetching meta:', error);
+    return fallback;
+  }
+}
+
+function parseMeta(html: string, url: string): Partial<StashItem> {
+  if (!html) {
     return {
-      title: decodeHtml(title),
-      description: description ? decodeHtml(description) : undefined,
-      image, url, favicon: faviconFor(url),
+      title: capitalizeFirst(domainOf(url)),
+      url,
+      favicon: faviconFor(url),
     };
-  } catch { return fallback; }
+  }
+
+  // Helper to extract content from meta tags
+  const pick = (re: RegExp) => {
+    const m = html.match(re);
+    return m ? m[1].trim() : undefined;
+  };
+
+  // Try multiple patterns for title
+  const title =
+    pick(/<meta\s+property=["']og:title["']\s+content=["']([^"']+)["']/i) ||
+    pick(/<meta\s+content=["']([^"']+)["']\s+property=["']og:title["']/i) ||
+    pick(/<meta\s+name=["']twitter:title["']\s+content=["']([^"']+)["']/i) ||
+    pick(/<meta\s+content=["']([^"']+)["']\s+name=["']twitter:title["']/i) ||
+    pick(/<title[^>]*>([^<]+)<\/title>/i) ||
+    domainOf(url);
+
+  // Try multiple patterns for description
+  const description =
+    pick(/<meta\s+property=["']og:description["']\s+content=["']([^"']+)["']/i) ||
+    pick(/<meta\s+content=["']([^"']+)["']\s+property=["']og:description["']/i) ||
+    pick(/<meta\s+name=["']description["']\s+content=["']([^"']+)["']/i) ||
+    pick(/<meta\s+content=["']([^"']+)["']\s+name=["']description["']/i) ||
+    pick(/<meta\s+name=["']twitter:description["']\s+content=["']([^"']+)["']/i) ||
+    pick(/<meta\s+content=["']([^"']+)["']\s+name=["']twitter:description["']/i);
+
+  return {
+    title: capitalizeFirst(decodeHtml(title)),
+    description: description ? decodeHtml(description) : undefined,
+    url,
+    favicon: faviconFor(url),
+  };
+}
+
+function capitalizeFirst(str: string): string {
+  if (!str) return str;
+  return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
 function decodeHtml(s: string) {

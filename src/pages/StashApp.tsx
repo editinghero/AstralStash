@@ -4,13 +4,14 @@ import { useSearchParams, Link } from "react-router-dom";
 import {
   Plus, Search, Link2, FileText, LayoutGrid, Tag as TagIcon, Inbox, Menu, X,
   Pin, Trash2, Lightbulb, Download, Upload, Keyboard, Sparkles, FolderOpen,
-  Bookmark, Command as CommandIcon, MoreHorizontal, User as UserIcon,
+  Bookmark, Command as CommandIcon, MoreHorizontal, User as UserIcon, ChevronDown, ChevronRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Logo } from "@/components/Logo";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { StashCard } from "@/components/StashCard";
@@ -56,6 +57,14 @@ const StashApp = () => {
   const [bookmarkletOpen, setBookmarkletOpen] = useState(false);
   const [enlargedItem, setEnlargedItem] = useState<StashItem | null>(null);
   const [enlargedOpen, setEnlargedOpen] = useState(false);
+  const [collectionsOpen, setCollectionsOpen] = useState(() => {
+    const saved = localStorage.getItem('sidebar:collections:open');
+    return saved !== null ? JSON.parse(saved) : true;
+  });
+  const [tagsOpen, setTagsOpen] = useState(() => {
+    const saved = localStorage.getItem('sidebar:tags:open');
+    return saved !== null ? JSON.parse(saved) : true;
+  });
   const fileRef = useRef<HTMLInputElement>(null);
   const { theme, toggle: toggleTheme } = useTheme();
   const { user } = useAuth();
@@ -80,6 +89,15 @@ const StashApp = () => {
     };
     loadData();
   }, []);
+
+  // Save sidebar collapse state
+  useEffect(() => {
+    localStorage.setItem('sidebar:collections:open', JSON.stringify(collectionsOpen));
+  }, [collectionsOpen]);
+
+  useEffect(() => {
+    localStorage.setItem('sidebar:tags:open', JSON.stringify(tagsOpen));
+  }, [tagsOpen]);
 
   // Bookmarklet handoff
   useEffect(() => {
@@ -299,21 +317,25 @@ const StashApp = () => {
   };
 
   const sidebar = (
-    <aside className="space-y-6 flex flex-col h-full">
-      <Button onClick={() => openAdd("link")}
-        className="w-full rounded-xl gradient-primary text-primary-foreground shadow-pink hover:opacity-95 h-11 transition-transform hover:scale-[1.02]">
-        <Plus className="w-4 h-4 mr-1" /> Add new
-      </Button>
+    <aside className="space-y-6 flex flex-col h-full overflow-y-auto sidebar-scroll w-full">
+      <div className="space-y-6 px-1">
+        <Button onClick={() => openAdd("link")}
+          className="w-full rounded-xl gradient-primary text-primary-foreground shadow-pink hover:opacity-95 h-11 transition-transform hover:scale-[1.02] shrink-0">
+          <Plus className="w-4 h-4 mr-1 shrink-0" /> <span className="truncate">Add new</span>
+        </Button>
 
-      <button
-        onClick={() => { setPaletteOpen(true); setSidebarOpen(false); }}
-        className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-xl text-sm border border-border bg-muted/40 hover:bg-muted text-muted-foreground transition"
-      >
-        <span className="flex items-center gap-2"><CommandIcon className="w-4 h-4" /> Quick search</span>
-        <kbd className="px-1.5 py-0.5 rounded bg-background text-[10px] font-mono">⌘K</kbd>
-      </button>
+        <button
+          onClick={() => { setPaletteOpen(true); setSidebarOpen(false); }}
+          className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-xl text-sm border border-border bg-muted/40 hover:bg-muted text-muted-foreground transition shrink-0 min-w-0"
+        >
+          <span className="flex items-center gap-2 min-w-0">
+            <CommandIcon className="w-4 h-4 shrink-0" /> 
+            <span className="truncate">Quick search</span>
+          </span>
+          <kbd className="px-1.5 py-0.5 rounded bg-background text-[10px] font-mono shrink-0">⌘K</kbd>
+        </button>
 
-      <nav className="space-y-1">
+        <nav className="space-y-1 shrink-0 w-full">
         <SideItem icon={LayoutGrid} label="All items" count={counts.all}
           active={filter === "all" && !activeTag}
           onClick={() => { setFilter("all"); setActiveTag(null); setActiveCollection(null); setSidebarOpen(false); }} />
@@ -334,91 +356,99 @@ const StashApp = () => {
           onClick={() => { setFilter("trash"); setActiveTag(null); setActiveCollection(null); setSidebarOpen(false); }} />
       </nav>
 
-      <div>
-        <div className="flex items-center justify-between px-3 mb-2">
-          <span className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-            <FolderOpen className="w-3 h-3" /> Collections
-          </span>
+      <Collapsible open={collectionsOpen} onOpenChange={setCollectionsOpen} className="shrink-0 w-full">
+        <div className="flex items-center justify-between px-3 mb-2 gap-2 min-w-0">
+          <CollapsibleTrigger className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-muted-foreground hover:text-foreground transition min-w-0">
+            {collectionsOpen ? <ChevronDown className="w-3 h-3 shrink-0" /> : <ChevronRight className="w-3 h-3 shrink-0" />}
+            <FolderOpen className="w-3 h-3 shrink-0" /> 
+            <span className="truncate">Collections</span>
+          </CollapsibleTrigger>
           <button onClick={() => { setEditingCollection(null); setCollectionOpen(true); }}
-            className="text-muted-foreground hover:text-primary transition" aria-label="New collection">
+            className="text-muted-foreground hover:text-primary transition shrink-0" aria-label="New collection">
             <Plus className="w-3.5 h-3.5" />
           </button>
         </div>
-        {collections.length === 0 ? (
-          <p className="px-3 text-xs text-muted-foreground">No collections yet</p>
-        ) : (
-          <div className="space-y-0.5">
-            {collections.map((c) => (
-              <div key={c.id} className="group/col flex items-center">
+        <CollapsibleContent className="w-full">
+          {collections.length === 0 ? (
+            <p className="px-3 text-xs text-muted-foreground">No collections yet</p>
+          ) : (
+            <div className="space-y-0.5 w-full">
+              {collections.map((c) => (
+                <div key={c.id} className="group/col flex items-center min-w-0 w-full gap-1">
+                  <button
+                    onClick={() => { setFilter("collection"); setActiveCollection(c.id); setActiveTag(null); setSidebarOpen(false); }}
+                    className={`flex-1 flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors min-w-0 ${
+                      filter === "collection" && activeCollection === c.id ? "bg-accent text-accent-foreground" : "hover:bg-muted"
+                    }`}
+                  >
+                    <span className="flex items-center gap-2 truncate min-w-0 flex-1">
+                      <span className="text-base leading-none shrink-0">{c.emoji || "📁"}</span>
+                      <span className="truncate">{c.name}</span>
+                    </span>
+                    <span className="text-xs text-muted-foreground shrink-0 ml-2">{collectionCounts.get(c.id) ?? 0}</span>
+                  </button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button className="opacity-0 group-hover/col:opacity-100 p-1 text-muted-foreground hover:text-foreground shrink-0" aria-label="Collection options">
+                        <MoreHorizontal className="w-4 h-4" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => { setEditingCollection(c); setCollectionOpen(true); }}>Rename</DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem className="text-destructive" onClick={async () => {
+                        try {
+                          await api.deleteCollection(c.id);
+                          setCollections((prev) => prev.filter((x) => x.id !== c.id));
+                          setItems((prev) => prev.map((i) => i.collectionId === c.id ? { ...i, collectionId: null } : i));
+                          if (activeCollection === c.id) { setFilter("all"); setActiveCollection(null); }
+                          toast.success("Collection deleted");
+                        } catch (error) {
+                          console.error('Failed to delete collection:', error);
+                          toast.error('Failed to delete collection');
+                        }
+                      }}>Delete</DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              ))}
+            </div>
+          )}
+        </CollapsibleContent>
+      </Collapsible>
+
+      <Collapsible open={tagsOpen} onOpenChange={setTagsOpen} className="flex-1 min-h-0 overflow-hidden w-full">
+        <CollapsibleTrigger className="flex items-center gap-2 px-3 mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground hover:text-foreground transition min-w-0">
+          {tagsOpen ? <ChevronDown className="w-3 h-3 shrink-0" /> : <ChevronRight className="w-3 h-3 shrink-0" />}
+          <TagIcon className="w-3 h-3 shrink-0" /> 
+          <span className="truncate">Tags</span>
+        </CollapsibleTrigger>
+        <CollapsibleContent className="overflow-y-auto max-h-full w-full">
+          {tags.length === 0 ? (
+            <p className="px-3 text-xs text-muted-foreground">No tags yet</p>
+          ) : (
+            <div className="space-y-0.5 w-full">
+              {tags.map(([t, c]) => (
                 <button
-                  onClick={() => { setFilter("collection"); setActiveCollection(c.id); setActiveTag(null); setSidebarOpen(false); }}
-                  className={`flex-1 flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors ${
-                    filter === "collection" && activeCollection === c.id ? "bg-accent text-accent-foreground" : "hover:bg-muted"
+                  key={t}
+                  onClick={() => { setActiveTag(activeTag === t ? null : t); setSidebarOpen(false); }}
+                  className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors min-w-0 ${
+                    activeTag === t ? "bg-accent text-accent-foreground" : "hover:bg-muted"
                   }`}
                 >
-                  <span className="flex items-center gap-2 truncate">
-                    <span className="text-base leading-none">{c.emoji || "📁"}</span>
-                    <span className="truncate">{c.name}</span>
+                  <span className="flex items-center gap-2 truncate min-w-0 flex-1">
+                    <span className={`w-2 h-2 rounded-full shrink-0 ${tagColor(t)}`} />
+                    <span className="truncate">{t}</span>
                   </span>
-                  <span className="text-xs text-muted-foreground">{collectionCounts.get(c.id) ?? 0}</span>
+                  <span className="text-xs text-muted-foreground shrink-0 ml-2">{c}</span>
                 </button>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <button className="opacity-0 group-hover/col:opacity-100 px-1 text-muted-foreground hover:text-foreground" aria-label="Collection options">
-                      <MoreHorizontal className="w-4 h-4" />
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => { setEditingCollection(c); setCollectionOpen(true); }}>Rename</DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem className="text-destructive" onClick={async () => {
-                      try {
-                        await api.deleteCollection(c.id);
-                        setCollections((prev) => prev.filter((x) => x.id !== c.id));
-                        setItems((prev) => prev.map((i) => i.collectionId === c.id ? { ...i, collectionId: null } : i));
-                        if (activeCollection === c.id) { setFilter("all"); setActiveCollection(null); }
-                        toast.success("Collection deleted");
-                      } catch (error) {
-                        console.error('Failed to delete collection:', error);
-                        toast.error('Failed to delete collection');
-                      }
-                    }}>Delete</DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+              ))}
+            </div>
+          )}
+        </CollapsibleContent>
+      </Collapsible>
 
-      <div className="flex-1 min-h-0">
-        <div className="flex items-center gap-2 px-3 mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-          <TagIcon className="w-3 h-3" /> Tags
-        </div>
-        {tags.length === 0 ? (
-          <p className="px-3 text-xs text-muted-foreground">No tags yet</p>
-        ) : (
-          <div className="space-y-0.5">
-            {tags.map(([t, c]) => (
-              <button
-                key={t}
-                onClick={() => { setActiveTag(activeTag === t ? null : t); setSidebarOpen(false); }}
-                className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors ${
-                  activeTag === t ? "bg-accent text-accent-foreground" : "hover:bg-muted"
-                }`}
-              >
-                <span className="flex items-center gap-2 truncate">
-                  <span className={`w-2 h-2 rounded-full ${tagColor(t)}`} />
-                  <span className="truncate">{t}</span>
-                </span>
-                <span className="text-xs text-muted-foreground">{c}</span>
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-
-      <div className="pt-4 border-t border-border space-y-1">
+      <div className="pt-4 border-t border-border space-y-1 shrink-0">
         <button onClick={() => exportItems(items, collections)}
           className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm hover:bg-muted text-foreground/80 transition">
           <Download className="w-4 h-4" /> Export JSON
@@ -435,6 +465,7 @@ const StashApp = () => {
           className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm hover:bg-muted text-foreground/80 transition">
           <Keyboard className="w-4 h-4" /> Shortcuts
         </button>
+      </div>
       </div>
     </aside>
   );
@@ -565,8 +596,8 @@ const StashApp = () => {
         </div>
       </header>
 
-      <div className="container py-8 grid lg:grid-cols-[260px_1fr] gap-8">
-        <div className="hidden lg:block">{sidebar}</div>
+      <div className="container py-8 grid lg:grid-cols-[280px_1fr] gap-8">
+        <div className="hidden lg:block w-full max-w-[280px]">{sidebar}</div>
 
         <AnimatePresence>
           {sidebarOpen && (
@@ -578,7 +609,7 @@ const StashApp = () => {
               <motion.div
                 initial={{ x: -300 }} animate={{ x: 0 }} exit={{ x: -300 }}
                 transition={{ type: "spring", damping: 25, stiffness: 220 }}
-                className="absolute left-0 top-0 bottom-0 w-72 bg-background p-5 overflow-y-auto"
+                className="absolute left-0 top-0 bottom-0 w-80 max-w-[85vw] bg-background p-5 overflow-y-auto sidebar-scroll"
                 onClick={(e) => e.stopPropagation()}
               >
                 <div className="flex items-center justify-between mb-6">
@@ -692,6 +723,7 @@ const StashApp = () => {
         initialUrl={initialUrl}
         initialTab={initialTab}
         collections={collections}
+        allItems={items}
       />
 
       <CommandPalette

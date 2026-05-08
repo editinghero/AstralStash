@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { X, Pencil, Pin, Trash2 } from "lucide-react";
 import { StashItem } from "@/lib/stash";
 import ReactMarkdown from "react-markdown";
+import rehypeRaw from "rehype-raw";
 import { motion, AnimatePresence } from "framer-motion";
 
 type Props = {
@@ -24,7 +25,7 @@ export const EnlargedViewDialog = ({ item, open, onOpenChange, onEdit, onPin, on
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent 
-        className="sm:max-w-3xl max-h-[85vh] overflow-y-auto p-0 gap-0 rounded-3xl enlarged-dialog-scroll"
+        className="sm:max-w-3xl max-h-[85vh] overflow-y-auto p-0 gap-0 rounded-3xl enlarged-dialog-scroll [&>button]:hidden"
         style={{ backgroundColor: item.color || "#FFF0F3" }}
       >
         <motion.div 
@@ -91,6 +92,16 @@ export const EnlargedViewDialog = ({ item, open, onOpenChange, onEdit, onPin, on
                   <Trash2 className="w-4 h-4" />
                 </Button>
               )}
+              <Button
+                size="icon"
+                variant="ghost"
+                onClick={() => onOpenChange(false)}
+                className="h-9 w-9 rounded-full hover:bg-white/60"
+                style={{ color: pastelInk }}
+                aria-label="Close"
+              >
+                <X className="w-4 h-4" />
+              </Button>
             </div>
           </motion.div>
 
@@ -119,7 +130,7 @@ export const EnlargedViewDialog = ({ item, open, onOpenChange, onEdit, onPin, on
               {isNote && item.format === "txt" ? (
                 <pre className="whitespace-pre-wrap font-sans text-base leading-relaxed">{item.content}</pre>
               ) : (
-                <ReactMarkdown>{item.content}</ReactMarkdown>
+                <ReactMarkdown rehypePlugins={[rehypeRaw]}>{item.content}</ReactMarkdown>
               )}
             </motion.div>
           )}

@@ -6,8 +6,11 @@ import { VitePWA } from "vite-plugin-pwa";
 export default defineConfig(() => ({
   server: {
     host: "::",
-    port: 8080,
-    hmr: { overlay: false },
+    port: 9999,
+    hmr: { 
+      overlay: false,
+      clientPort: 9999,
+    },
   },
   plugins: [
     react(),
@@ -39,6 +42,9 @@ export default defineConfig(() => ({
   ].filter(Boolean),
   resolve: {
     alias: { "@": path.resolve(__dirname, "./src") },
-    dedupe: ["react", "react-dom", "react/jsx-runtime", "react/jsx-dev-runtime", "@tanstack/react-query", "@tanstack/query-core"],
+    dedupe: ["react", "react-dom", "react/jsx-runtime", "react/jsx-dev-runtime", "@radix-ui/react-tooltip", "@tanstack/react-query", "@tanstack/query-core"],
+  },
+  optimizeDeps: {
+    include: ["react", "react-dom", "@radix-ui/react-tooltip"],
   },
 }));

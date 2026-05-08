@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import ReactMarkdown from "react-markdown";
+import rehypeRaw from "rehype-raw";
 import { ExternalLink, Trash2, FileText, Lightbulb, Pin, RotateCcw, Pencil, Maximize2 } from "lucide-react";
 import { StashItem, domainOf } from "@/lib/stash";
 import { Button } from "@/components/ui/button";
@@ -33,10 +34,13 @@ export const StashCard = ({ item, onDelete, onPin, onRestore, onPurge, onEdit, o
 
   // Pastel cards keep a fixed dark ink in both themes since their background stays light
   const pastelInk = "#1A2B3C";
-  const cardStyle = !isLink
+  
+  // Links use color when no image, notes/ideas always use color
+  const hasCustomBg = !isLink || (isLink && !item.image && item.color);
+  const cardStyle = hasCustomBg
     ? { backgroundColor: item.color || "#FFF0F3", color: pastelInk }
     : undefined;
-  const cardClass = isLink ? "bg-card" : "";
+  const cardClass = !hasCustomBg ? "bg-card" : "";
 
   return (
     <motion.div
@@ -73,12 +77,14 @@ export const StashCard = ({ item, onDelete, onPin, onRestore, onPurge, onEdit, o
                 }}
               />
             ) : null}
-            <div
-              className="w-full h-40 items-center justify-center font-display text-2xl text-secondary/40"
-              style={{ background: placeholderFor(item.title), display: item.image ? "none" : "flex" }}
-            >
-              {domainOf(item.url || "").charAt(0).toUpperCase()}
-            </div>
+            {!item.image && (
+              <div
+                className="w-full h-40 flex items-center justify-center font-display text-2xl"
+                style={{ background: item.color || placeholderFor(item.title), color: pastelInk + "66" }}
+              >
+                {domainOf(item.url || "").charAt(0).toUpperCase()}
+              </div>
+            )}
           </a>
         )}
 
@@ -102,9 +108,9 @@ export const StashCard = ({ item, onDelete, onPin, onRestore, onPurge, onEdit, o
           {!(isIdea && !item.title) && (
             <h3
               className={`font-display font-semibold leading-snug break-words ${
-                isLink ? "text-lg text-secondary" : "text-xl"
+                isLink ? "text-lg" : "text-xl"
               }`}
-              style={!isLink ? { color: pastelInk } : undefined}
+              style={hasCustomBg ? { color: pastelInk } : { color: "hsl(var(--secondary))" }}
             >
               {isLink && item.url ? (
                 <a href={item.url} target="_blank" rel="noreferrer" className="hover:text-primary transition-colors break-words">
@@ -117,7 +123,7 @@ export const StashCard = ({ item, onDelete, onPin, onRestore, onPurge, onEdit, o
           )}
 
           {isLink && item.description && (
-            <p className="mt-2 text-sm text-muted-foreground line-clamp-3 break-words">{item.description}</p>
+            <p className="mt-2 text-sm line-clamp-3 break-words" style={hasCustomBg ? { color: `${pastelInk}cc` } : { color: "hsl(var(--muted-foreground))" }}>{item.description}</p>
           )}
 
           {(isNote || isIdea) && item.content && (
@@ -128,7 +134,7 @@ export const StashCard = ({ item, onDelete, onPin, onRestore, onPurge, onEdit, o
               {isNote && item.format === "txt" ? (
                 <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed">{item.content}</pre>
               ) : (
-                <ReactMarkdown>{item.content}</ReactMarkdown>
+                <ReactMarkdown rehypePlugins={[rehypeRaw]}>{item.content}</ReactMarkdown>
               )}
             </div>
           )}
@@ -138,8 +144,8 @@ export const StashCard = ({ item, onDelete, onPin, onRestore, onPurge, onEdit, o
               {item.tags.map((t) => (
                 <span
                   key={t}
-                  className={`px-2.5 py-0.5 rounded-full text-[11px] font-medium backdrop-blur ${isLink ? "bg-accent text-accent-foreground" : "bg-white/60"}`}
-                  style={!isLink ? { color: pastelInk } : undefined}
+                  className={`px-2.5 py-0.5 rounded-full text-[11px] font-medium backdrop-blur ${hasCustomBg ? "bg-white/60" : "bg-accent text-accent-foreground"}`}
+                  style={hasCustomBg ? { color: pastelInk } : undefined}
                 >
                   #{t}
                 </span>
