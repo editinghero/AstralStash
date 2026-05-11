@@ -11,6 +11,13 @@ export default defineConfig(() => ({
       overlay: false,
       clientPort: 9999,
     },
+    proxy: {
+      '/api': {
+        target: 'http://127.0.0.1:8787',
+        changeOrigin: true,
+        secure: false,
+      },
+    },
   },
   plugins: [
     react(),

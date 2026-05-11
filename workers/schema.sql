@@ -88,3 +88,18 @@ CREATE TABLE IF NOT EXISTS sessions (
 
 CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id);
 CREATE INDEX IF NOT EXISTS idx_sessions_token ON sessions(refresh_token);
+
+-- AI Configuration (encrypted API keys)
+CREATE TABLE IF NOT EXISTS ai_configs (
+  id TEXT PRIMARY KEY,
+  user_id TEXT UNIQUE NOT NULL,
+  provider_type TEXT NOT NULL CHECK(provider_type IN ('gemini', 'openai-compat')),
+  encrypted_api_key TEXT NOT NULL,
+  model_id TEXT NOT NULL,
+  base_url TEXT, -- For OpenAI-compatible providers
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_ai_configs_user ON ai_configs(user_id);

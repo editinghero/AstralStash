@@ -2,6 +2,7 @@ export interface Env {
   DB: D1Database;
   JWT_SECRET: string;
   ENVIRONMENT: string;
+  ALLOW_SIGNUPS: string;
 }
 
 export interface User {
@@ -48,3 +49,29 @@ export interface Collection {
   emoji?: string;
   created_at: number;
 }
+
+export interface AIConfig {
+  id: string;
+  user_id: string;
+  provider_type: 'gemini' | 'openai-compat';
+  encrypted_api_key: string;
+  model_id: string;
+  base_url?: string;
+  created_at: number;
+  updated_at: number;
+}
+
+export interface AIConfigRequest {
+  provider_type: 'gemini' | 'openai-compat';
+  api_key: string; // Plain text, will be encrypted server-side
+  model_id: string;
+  base_url?: string;
+}
+
+export interface AIConfigResponse {
+  provider_type: 'gemini' | 'openai-compat';
+  model_id: string;
+  base_url?: string;
+  has_api_key: boolean; // Don't send the actual key back
+}
+

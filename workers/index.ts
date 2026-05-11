@@ -5,6 +5,7 @@ import {
   handleGetItems, handleCreateItem, handleUpdateItem, handleDeleteItem,
   handleGetCollections, handleCreateCollection, handleUpdateCollection, handleDeleteCollection
 } from './routes/stash';
+import ai from './routes/ai';
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
@@ -12,16 +13,30 @@ export default {
     const path = url.pathname;
     const method = request.method;
 
+    // CORS headers helper
+    const corsHeaders = {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    };
+
     // CORS preflight
     if (method === 'OPTIONS') {
-      return new Response(null, {
-        headers: {
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-        },
-      });
+      return new Response(null, { headers: corsHeaders });
     }
+
+    // Helper to add CORS to response
+    const addCors = (response: Response): Response => {
+      const newHeaders = new Headers(response.headers);
+      Object.entries(corsHeaders).forEach(([key, value]) => {
+        newHeaders.set(key, value);
+      });
+      return new Response(response.body, {
+        status: response.status,
+        statusText: response.statusText,
+        headers: newHeaders,
+      });
+    };
 
     try {
       // Auth routes
@@ -87,23 +102,55 @@ export default {
         return await handleDeleteCollection(request, env, collectionId);
       }
 
-      // Health check
-      if (path === '/api/health') {
-        return new Response(JSON.stringify({ status: 'ok' }), {
-          headers: { 'Content-Type': 'application/json' },
-        });
+      // AI configuration routes - delegate to Hono app
+      if (path.startsWith('/api/ai')) {
+        console.log('AI route matched:', path, method);
+        try {
+          // Hono expects the path to start from root
+          const honoPath = path.replace('/api/ai', '') || '/';
+          console.log('Hono path:', honoPath);
+          
+          // Create new URL with adjusted path
+          const honoUrl = new URL(request.url);
+          honoUrl.pathname = honoPath;
+          
+          // Create new request for Hono
+          const honoRequest = new Request(honoUrl.toString(), {
+            method: request.method,
+            headers: request.headers,
+            body: request.method !== 'GET' && request.method !== 'HEAD' ? request.body : null,
+          });
+          
+          // Call Hono with env context
+          const honoResponse = await ai.fetch(honoRequest, env, {});
+          console.log('Hono response status:', honoResponse.status);
+          return addCors(honoResponse);
+        } catch (error: any) {
+          console.error('AI route error:', error);
+          return addCors(new Response(JSON.stringify({ error: 'AI route error: ' + error.message }), {
+            status: 500,
+            headers: { 'Content-Type': 'application/json' },
+          }));
+        }
       }
 
-      return new Response(JSON.stringify({ error: 'Not found' }), {
+      // Health check
+      if (path === '/api/health') {
+        return addCors(new Response(JSON.stringify({ status: 'ok' }), {
+          headers: { 'Content-Type': 'application/json' },
+        }));
+      }
+
+      return addCors(new Response(JSON.stringify({ error: 'Not found' }), {
         status: 404,
         headers: { 'Content-Type': 'application/json' },
-      });
+      }));
     } catch (error) {
       console.error('Worker error:', error);
-      return new Response(JSON.stringify({ error: 'Internal server error' }), {
+      return addCors(new Response(JSON.stringify({ error: 'Internal server error' }), {
         status: 500,
         headers: { 'Content-Type': 'application/json' },
-      });
+      }));
     }
   },
 };

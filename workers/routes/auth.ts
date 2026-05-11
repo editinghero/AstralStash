@@ -8,6 +8,11 @@ const PROFILE_COLORS = [
 
 export async function handleRegister(request: Request, env: Env): Promise<Response> {
   try {
+    // Check if signups are allowed
+    if (env.ALLOW_SIGNUPS !== 'true') {
+      return jsonResponse({ error: 'New signups are currently disabled' }, 403);
+    }
+
     const { email, password, name } = await request.json() as { email: string; password: string; name: string };
 
     // Validation

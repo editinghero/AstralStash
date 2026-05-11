@@ -4,7 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Link2, FileText, Lightbulb, Loader2, Eye, Pencil, Pin, X, Bold, Italic, Heading2, List, Code, Link as LinkIcon, FolderOpen, Quote, HelpCircle } from "lucide-react";
+import { Link2, FileText, Lightbulb, Loader2, Eye, Pencil, Pin, X, Bold, Italic, Heading2, List, Code, Link as LinkIcon, FolderOpen, Quote, HelpCircle, Sparkles } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import rehypeRaw from "rehype-raw";
 import {
@@ -17,6 +17,9 @@ import {
 } from "@/components/ui/popover";
 import { StashItem, StashType, Collection, fetchLinkMeta, uid, domainOf, faviconFor, NOTE_COLORS, randomNoteColor } from "@/lib/stash";
 import { toast } from "sonner";
+import { useAI } from "@/contexts/AIContext";
+import { suggestTags, summarizeContent } from "@/lib/ai";
+import { AISettingsDialog } from "@/components/AISettingsDialog";
 
 type Props = {
   open: boolean;
@@ -178,6 +181,12 @@ export const AddItemDialog = ({ open, onOpenChange, onAdd, onUpdate, initialUrl,
   const [ideaText, setIdeaText] = useState("");
   const [ideaColor, setIdeaColor] = useState(NOTE_COLORS[0]);
 
+  // AI state
+  const { config, isConfigured } = useAI();
+  const [aiTagging, setAiTagging] = useState(false);
+  const [aiSummarizing, setAiSummarizing] = useState(false);
+  const [aiSettingsOpen, setAiSettingsOpen] = useState(false);
+
   const isEdit = !!editing;
 
   useEffect(() => {
@@ -254,6 +263,88 @@ export const AddItemDialog = ({ open, onOpenChange, onAdd, onUpdate, initialUrl,
       setAbortController(null);
       setLoading(false);
       toast.info('Fetch cancelled');
+    }
+  };
+
+  const handleAutoTag = async () => {
+    if (!isConfigured || !config) { setAiSettingsOpen(true); return; }
+    
+    // Get current content based on tab
+    let title = "", description = "", content = "";
+    if (tab === "link") {
+      title = linkTitle;
+      description = linkDesc;
+      content = "";
+    } else if (tab === "note") {
+      title = noteTitle;
+      description = "";
+      content = noteBody;
+    } else {
+      title = ideaTitle || "Quick idea";
+      description = "";
+      content = ideaText;
+    }
+    
+    if (!title && !content) {
+      toast.error("Add some content first");
+      return;
+    }
+    
+    setAiTagging(true);
+    try {
+      const allTags = Array.from(new Set(allItems.flatMap((i) => i.tags)));
+      const suggested = await suggestTags(config, title, description, content, allTags);
+      const newTags = suggested.filter((t) => !tags.includes(t));
+      setTags((prev) => [...prev, ...newTags]);
+      if (newTags.length) toast.success(`Added ${newTags.length} tag${newTags.length > 1 ? "s" : ""}`);
+      else toast.info("No new tags to add");
+    } catch (e: any) {
+      toast.error(e.message || "Auto-tag failed");
+    } finally {
+      setAiTagging(false);
+    }
+  };
+
+  const handleSummarize = async () => {
+    if (!isConfigured || !config) { setAiSettingsOpen(true); return; }
+    
+    // Get current content based on tab
+    let title = "", description = "", content = "";
+    if (tab === "link") {
+      title = linkTitle;
+      description = linkDesc;
+      content = "";
+    } else if (tab === "note") {
+      title = noteTitle;
+      description = "";
+      content = noteBody;
+    } else {
+      title = ideaTitle || "Quick idea";
+      description = "";
+      content = ideaText;
+    }
+    
+    if (!title && !content) {
+      toast.error("Add some content first");
+      return;
+    }
+    
+    setAiSummarizing(true);
+    try {
+      const summary = await summarizeContent(config, title, description, content);
+      // Set description based on tab
+      if (tab === "link") {
+        setLinkDesc(summary.trim());
+      } else if (tab === "note") {
+        setNoteBody((prev) => (prev ? prev + "\n\n" : "") + summary.trim());
+      } else {
+        setIdeaText((prev) => (prev ? prev + "\n\n" : "") + summary.trim());
+      }
+      toast.success("Summary added");
+    } catch (e: any) {
+      toast.error(e.message || "Summarize failed");
+    } finally {
+      setAiSummarizing(false);
     }
   };
 
@@ -412,6 +503,40 @@ export const AddItemDialog = ({ open, onOpenChange, onAdd, onUpdate, initialUrl,
               </div>
             )}
 
+            {/* AI Assist row */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                <Sparkles className="w-3.5 h-3.5 text-primary" /> AI Assist
+              </span>
+              <button
+                type="button"
+                onClick={handleSummarize}
+                disabled={aiSummarizing || (!linkTitle && !url)}
+                className="inline-flex items-center gap-1.5 px-3 h-8 rounded-full text-xs bg-muted hover:bg-accent transition-colors disabled:opacity-40"
+              >
+                {aiSummarizing ? <Loader2 className="w-3 h-3 animate-spin" /> : "📝"}
+                Summarize
+              </button>
+              <button
+                type="button"
+                onClick={handleAutoTag}
+                disabled={aiTagging || (!linkTitle && !url)}
+                className="inline-flex items-center gap-1.5 px-3 h-8 rounded-full text-xs bg-muted hover:bg-accent transition-colors disabled:opacity-40"
+              >
+                {aiTagging ? <Loader2 className="w-3 h-3 animate-spin" /> : "🏷"}
+                Auto-tag
+              </button>
+              {!isConfigured && (
+                <button
+                  type="button"
+                  onClick={() => setAiSettingsOpen(true)}
+                  className="text-xs text-primary hover:underline"
+                >
+                  Configure AI →
+                </button>
+              )}
+            </div>
+
             <CollectionPicker value={collectionId} onChange={setCollectionId} collections={collections} />
             <TagInput tags={tags} setTags={setTags} allItems={allItems} />
             <div className="flex items-center justify-between pt-2">
@@ -515,6 +640,41 @@ export const AddItemDialog = ({ open, onOpenChange, onAdd, onUpdate, initialUrl,
                   aria-label={`Color ${c}`} />
               ))}
             </div>
+
+            {/* AI Assist row */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                <Sparkles className="w-3.5 h-3.5 text-primary" /> AI Assist
+              </span>
+              <button
+                type="button"
+                onClick={handleSummarize}
+                disabled={aiSummarizing || (!noteTitle && !noteBody)}
+                className="inline-flex items-center gap-1.5 px-3 h-8 rounded-full text-xs bg-muted hover:bg-accent transition-colors disabled:opacity-40"
+              >
+                {aiSummarizing ? <Loader2 className="w-3 h-3 animate-spin" /> : "📝"}
+                Summarize
+              </button>
+              <button
+                type="button"
+                onClick={handleAutoTag}
+                disabled={aiTagging || (!noteTitle && !noteBody)}
+                className="inline-flex items-center gap-1.5 px-3 h-8 rounded-full text-xs bg-muted hover:bg-accent transition-colors disabled:opacity-40"
+              >
+                {aiTagging ? <Loader2 className="w-3 h-3 animate-spin" /> : "🏷"}
+                Auto-tag
+              </button>
+              {!isConfigured && (
+                <button
+                  type="button"
+                  onClick={() => setAiSettingsOpen(true)}
+                  className="text-xs text-primary hover:underline"
+                >
+                  Configure AI →
+                </button>
+              )}
+            </div>
+
             <CollectionPicker value={collectionId} onChange={setCollectionId} collections={collections} />
             <TagInput tags={tags} setTags={setTags} allItems={allItems} />
             <div className="flex items-center justify-between pt-2">
@@ -547,6 +707,40 @@ export const AddItemDialog = ({ open, onOpenChange, onAdd, onUpdate, initialUrl,
               </div>
             </div>
 
+            {/* AI Assist row */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                <Sparkles className="w-3.5 h-3.5 text-primary" /> AI Assist
+              </span>
+              <button
+                type="button"
+                onClick={handleSummarize}
+                disabled={aiSummarizing || !ideaText}
+                className="inline-flex items-center gap-1.5 px-3 h-8 rounded-full text-xs bg-muted hover:bg-accent transition-colors disabled:opacity-40"
+              >
+                {aiSummarizing ? <Loader2 className="w-3 h-3 animate-spin" /> : "📝"}
+                Summarize
+              </button>
+              <button
+                type="button"
+                onClick={handleAutoTag}
+                disabled={aiTagging || !ideaText}
+                className="inline-flex items-center gap-1.5 px-3 h-8 rounded-full text-xs bg-muted hover:bg-accent transition-colors disabled:opacity-40"
+              >
+                {aiTagging ? <Loader2 className="w-3 h-3 animate-spin" /> : "🏷"}
+                Auto-tag
+              </button>
+              {!isConfigured && (
+                <button
+                  type="button"
+                  onClick={() => setAiSettingsOpen(true)}
+                  className="text-xs text-primary hover:underline"
+                >
+                  Configure AI →
+                </button>
+              )}
+            </div>
+
             <CollectionPicker value={collectionId} onChange={setCollectionId} collections={collections} />
             <TagInput tags={tags} setTags={setTags} allItems={allItems} />
             <div className="flex items-center justify-between pt-2">
@@ -558,6 +752,8 @@ export const AddItemDialog = ({ open, onOpenChange, onAdd, onUpdate, initialUrl,
             </div>
           </TabsContent>
         </Tabs>
+        
+        <AISettingsDialog open={aiSettingsOpen} onOpenChange={setAiSettingsOpen} />
       </DialogContent>
     </Dialog>
   );

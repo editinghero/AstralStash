@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, User as UserIcon, Mail, Lock, Palette, Loader2, Check, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, User as UserIcon, Mail, Lock, Palette, Loader2, Check, AlertTriangle, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -20,10 +20,13 @@ import { ThemeToggle } from '@/components/ThemeToggle';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
 import { toast } from 'sonner';
+import { useAI } from '@/contexts/AIContext';
+import { AISettingsDialog } from '@/components/AISettingsDialog';
 
 export default function Profile() {
   const { user, updateUser, logout } = useAuth();
   const navigate = useNavigate();
+  const { config, isConfigured } = useAI();
 
   const [name, setName] = useState(user?.name || '');
   const [selectedColor, setSelectedColor] = useState(user?.profile_color || '');
@@ -39,6 +42,7 @@ export default function Profile() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteConfirmation, setDeleteConfirmation] = useState('');
   const [deletingAccount, setDeletingAccount] = useState(false);
+  const [aiSettingsOpen, setAiSettingsOpen] = useState(false);
 
   useEffect(() => {
     const fetchColors = async () => {
@@ -256,6 +260,32 @@ export default function Profile() {
             </form>
           </div>
 
+          {/* AI Features Section */}
+          <div className="bg-card rounded-3xl shadow-soft p-8 border border-border/60">
+            <div className="flex items-center gap-2 mb-2">
+              <Sparkles className="w-5 h-5 text-primary" />
+              <h2 className="font-display text-2xl text-secondary">AI Features</h2>
+              {isConfigured && (
+                <span className="ml-auto text-xs px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300">
+                  Configured ✓
+                </span>
+              )}
+            </div>
+            <p className="text-sm text-muted-foreground mb-4">
+              Connect an AI provider to unlock auto-tagging, summaries, smart search, and chat with your knowledge base.
+              Your API key is stored only in this browser.
+            </p>
+            {isConfigured && config && (
+              <p className="text-xs text-muted-foreground font-mono mb-4 p-3 bg-muted/50 rounded-xl">
+                Provider: {config.type === "gemini" ? `Gemini (${config.model})` : `${config.baseUrl} · ${config.modelId}`}
+              </p>
+            )}
+            <Button onClick={() => setAiSettingsOpen(true)} className="rounded-full" variant="outline">
+              <Sparkles className="w-4 h-4 mr-2" />
+              {isConfigured ? "Update AI Settings" : "Set Up AI"}
+            </Button>
+          </div>
+
           {/* Password Section */}
           <div className="bg-card rounded-3xl shadow-soft p-8 border border-border/60">
             <h2 className="font-display text-2xl text-secondary mb-6">Change Password</h2>
@@ -418,6 +448,9 @@ export default function Profile() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* AI Settings Dialog */}
+      <AISettingsDialog open={aiSettingsOpen} onOpenChange={setAiSettingsOpen} />
     </div>
   );
 }

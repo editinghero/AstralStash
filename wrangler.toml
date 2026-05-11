@@ -1,0 +1,15 @@
+name = "astralstash-api"
+main = "workers/index.ts"
+compatibility_date = "2024-01-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "astralstash"
+database_id = "7b55e245-78f2-44b2-9ba5-8da519f9740a"
+
+[vars]
+JWT_SECRET = "jwt-secret-is-always-nicetochangeithink33399%"
+ENVIRONMENT = "development"
+ALLOW_SIGNUPS = "true"
+
+

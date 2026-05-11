@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import ReactMarkdown from "react-markdown";
 import rehypeRaw from "rehype-raw";
-import { ExternalLink, Trash2, FileText, Lightbulb, Pin, RotateCcw, Pencil, Maximize2 } from "lucide-react";
+import { ExternalLink, Trash2, FileText, Lightbulb, Pin, RotateCcw, Pencil, Maximize2, Sparkles } from "lucide-react";
 import { StashItem, domainOf } from "@/lib/stash";
 import { Button } from "@/components/ui/button";
 
@@ -23,11 +23,12 @@ type Props = {
   onPurge?: (id: string) => void;
   onEdit?: (item: StashItem) => void;
   onEnlarge?: (item: StashItem) => void;
+  onChat?: (item: StashItem) => void;
   trash?: boolean;
   index?: number;
 };
 
-export const StashCard = ({ item, onDelete, onPin, onRestore, onPurge, onEdit, onEnlarge, trash, index = 0 }: Props) => {
+export const StashCard = ({ item, onDelete, onPin, onRestore, onPurge, onEdit, onEnlarge, onChat, trash, index = 0 }: Props) => {
   const isLink = item.type === "link";
   const isIdea = item.type === "idea";
   const isNote = item.type === "note";
@@ -183,6 +184,16 @@ export const StashCard = ({ item, onDelete, onPin, onRestore, onPurge, onEdit, o
                       className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity hover:text-primary" 
                       aria-label="Enlarge">
                       <Maximize2 className="w-3.5 h-3.5" />
+                    </Button>
+                  )}
+                  {onChat && (
+                    <Button 
+                      size="icon" 
+                      variant="ghost" 
+                      onClick={() => onChat(item)}
+                      className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity hover:text-primary" 
+                      aria-label="Ask AI">
+                      <Sparkles className="w-3.5 h-3.5 text-primary" />
                     </Button>
                   )}
                   {onEdit && (

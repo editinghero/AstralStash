@@ -4,7 +4,7 @@ import { useSearchParams, Link } from "react-router-dom";
 import {
   Plus, Search, Link2, FileText, LayoutGrid, Tag as TagIcon, Inbox, Menu, X,
   Pin, Trash2, Lightbulb, Download, Upload, Keyboard, Sparkles, FolderOpen,
-  Bookmark, Command as CommandIcon, MoreHorizontal, User as UserIcon, ChevronDown, ChevronRight,
+  Bookmark, Command as CommandIcon, MoreHorizontal, User as UserIcon, ChevronDown, ChevronRight, Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,6 +25,10 @@ import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/contexts/AuthContext";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
+import { useAI } from "@/contexts/AIContext";
+import { smartSearch } from "@/lib/ai";
+import { AIChatDialog } from "@/components/AIChatDialog";
+import { AISettingsDialog } from "@/components/AISettingsDialog";
 
 type Filter = "all" | "link" | "note" | "idea" | "pinned" | "trash" | "collection";
 type Sort = "newest" | "oldest" | "title" | "type";
@@ -69,6 +73,16 @@ const StashApp = () => {
   const { theme, toggle: toggleTheme } = useTheme();
   const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
+  
+  // AI state
+  const { config, isConfigured } = useAI();
+  const [smartSearchEnabled, setSmartSearchEnabled] = useState(false);
+  const [smartSearchResults, setSmartSearchResults] = useState<string[] | null>(null);
+  const [smartSearching, setSmartSearching] = useState(false);
+  const [kbChatOpen, setKbChatOpen] = useState(false);
+  const [itemChatOpen, setItemChatOpen] = useState(false);
+  const [chatItem, setChatItem] = useState<StashItem | null>(null);
+  const [aiSettingsOpen, setAiSettingsOpen] = useState(false);
 
   // Load items and collections from API
   useEffect(() => {
@@ -130,9 +144,21 @@ const StashApp = () => {
     const onKey = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement | null;
       const inField = target && ["INPUT", "TEXTAREA"].includes(target.tagName);
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+      
+      // ⌘⇧K or Ctrl+Shift+K - AI Knowledge Base Chat
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === "k") {
+        e.preventDefault(); 
+        if (isConfigured) {
+          setKbChatOpen(true);
+        }
+        return;
+      }
+      
+      // ⌘K or Ctrl+K - Command Palette (only if Shift is NOT pressed)
+      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === "k") {
         e.preventDefault(); setPaletteOpen((o) => !o); return;
       }
+      
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "n" && !inField) {
         e.preventDefault(); setEditing(null); setInitialUrl(undefined); setInitialTab("note"); setOpen(true);
       }
@@ -145,10 +171,30 @@ const StashApp = () => {
     window.addEventListener("paste", onPaste);
     window.addEventListener("keydown", onKey);
     return () => { window.removeEventListener("paste", onPaste); window.removeEventListener("keydown", onKey); };
-  }, []);
+  }, [isConfigured]);
 
   const live = useMemo(() => items.filter((i) => !i.deleted), [items]);
   const trashed = useMemo(() => items.filter((i) => i.deleted), [items]);
+
+  // Smart search effect
+  useEffect(() => {
+    if (!smartSearchEnabled || !query.trim() || !config) {
+      setSmartSearchResults(null);
+      return;
+    }
+    const t = setTimeout(async () => {
+      setSmartSearching(true);
+      try {
+        const ids = await smartSearch(config, query, live);
+        setSmartSearchResults(ids);
+      } catch {
+        setSmartSearchResults(null);
+      } finally {
+        setSmartSearching(false);
+      }
+    }, 600);
+    return () => clearTimeout(t);
+  }, [query, smartSearchEnabled, config, live]);
 
   const tags = useMemo(() => {
     const map = new Map<string, number>();
@@ -174,6 +220,7 @@ const StashApp = () => {
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     const source = filter === "trash" ? trashed : live;
+    
     let list = source.filter((i) => {
       if (filter === "link" || filter === "note" || filter === "idea") {
         if (i.type !== filter) return false;
@@ -182,17 +229,39 @@ const StashApp = () => {
       if (filter === "collection" && i.collectionId !== activeCollection) return false;
       if (activeTag && !i.tags.includes(activeTag)) return false;
       if (!q) return true;
+      
+      // If smart search is enabled and we have results, filter by those IDs
+      if (smartSearchEnabled && smartSearchResults) {
+        return smartSearchResults.includes(i.id);
+      }
+      
+      // Otherwise use regular text search
       const hay = [i.title, i.description ?? "", i.content ?? "", i.url ?? "", i.tags.join(" ")].join(" ").toLowerCase();
       return hay.includes(q);
     });
-    list = [...list].sort((a, b) => {
-      if (sort === "newest") return b.createdAt - a.createdAt;
-      if (sort === "oldest") return a.createdAt - b.createdAt;
-      if (sort === "type") return a.type.localeCompare(b.type);
-      return a.title.localeCompare(b.title);
-    });
+    
+    // If smart search is enabled and we have results, sort by relevance (order in smartSearchResults)
+    if (smartSearchEnabled && smartSearchResults && q) {
+      list = [...list].sort((a, b) => {
+        const aIndex = smartSearchResults.indexOf(a.id);
+        const bIndex = smartSearchResults.indexOf(b.id);
+        if (aIndex === -1 && bIndex === -1) return 0;
+        if (aIndex === -1) return 1;
+        if (bIndex === -1) return -1;
+        return aIndex - bIndex;
+      });
+    } else {
+      // Regular sorting
+      list = [...list].sort((a, b) => {
+        if (sort === "newest") return b.createdAt - a.createdAt;
+        if (sort === "oldest") return a.createdAt - b.createdAt;
+        if (sort === "type") return a.type.localeCompare(b.type);
+        return a.title.localeCompare(b.title);
+      });
+    }
+    
     return list;
-  }, [live, trashed, query, filter, activeCollection, activeTag, sort]);
+  }, [live, trashed, query, filter, activeCollection, activeTag, sort, smartSearchEnabled, smartSearchResults]);
 
   const showSections = filter === "all" && !activeTag && !query;
   const pinnedSection = useMemo(() => (showSections ? filtered.filter((i) => i.pinned) : []), [showSections, filtered]);
@@ -292,6 +361,7 @@ const StashApp = () => {
   };
   const openEdit = (item: StashItem) => { setEditing(item); setOpen(true); };
   const openEnlarged = (item: StashItem) => { setEnlargedItem(item); setEnlargedOpen(true); };
+  const openItemChat = (item: StashItem) => { setChatItem(item); setItemChatOpen(true); };
 
   const importJson = () => fileRef.current?.click();
   const onFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -449,6 +519,12 @@ const StashApp = () => {
       </Collapsible>
 
       <div className="pt-4 border-t border-border space-y-1 shrink-0">
+        {isConfigured && (
+          <button onClick={() => { setKbChatOpen(true); setSidebarOpen(false); }}
+            className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm hover:bg-muted text-foreground/80 transition">
+            <Sparkles className="w-4 h-4 text-primary" /> Ask AI
+          </button>
+        )}
         <button onClick={() => exportItems(items, collections)}
           className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm hover:bg-muted text-foreground/80 transition">
           <Download className="w-4 h-4" /> Export JSON
@@ -500,8 +576,21 @@ const StashApp = () => {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search your stash…  ( press / )"
-              className="pl-11 pr-20 rounded-full bg-muted/60 border-transparent focus-visible:bg-card h-11"
+              className="pl-11 pr-32 rounded-full bg-muted/60 border-transparent focus-visible:bg-card h-11"
             />
+            {isConfigured && (
+              <button
+                onClick={() => setSmartSearchEnabled((s) => !s)}
+                className={`absolute right-[4.5rem] top-1/2 -translate-y-1/2 px-2 py-1 rounded-full text-[10px] font-medium transition-colors ${
+                  smartSearchEnabled
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted text-muted-foreground hover:bg-accent"
+                }`}
+                title={smartSearchEnabled ? "Smart search ON" : "Smart search OFF"}
+              >
+                {smartSearching ? <Loader2 className="w-3 h-3 animate-spin" /> : "✨ AI"}
+              </button>
+            )}
             <button
               onClick={() => setPaletteOpen(true)}
               className="absolute right-2 top-1/2 -translate-y-1/2 px-2 py-1 rounded-md bg-background border text-[10px] font-mono text-muted-foreground hover:text-foreground hidden md:block"
@@ -670,7 +759,7 @@ const StashApp = () => {
                       <AnimatePresence>
                         {pinnedSection.map((item, i) => (
                           <StashCard key={item.id} item={item} index={i}
-                            onDelete={softDelete} onPin={togglePin} onEdit={openEdit} onEnlarge={openEnlarged} />
+                            onDelete={softDelete} onPin={togglePin} onEdit={openEdit} onEnlarge={openEnlarged} onChat={isConfigured ? openItemChat : undefined} />
                         ))}
                       </AnimatePresence>
                     </div>
@@ -691,6 +780,7 @@ const StashApp = () => {
                             onPin={filter === "trash" ? undefined : togglePin}
                             onEdit={filter === "trash" ? undefined : openEdit}
                             onEnlarge={filter === "trash" ? undefined : openEnlarged}
+                            onChat={filter === "trash" || !isConfigured ? undefined : openItemChat}
                             onRestore={restore}
                             onPurge={purge}
                             trash={filter === "trash"}
@@ -762,6 +852,7 @@ const StashApp = () => {
           <div className="space-y-3 mt-2">
             {[
               { keys: ["⌘", "K"], label: "Open command palette" },
+              { keys: ["⌘", "⇧", "K"], label: "Ask AI (Knowledge Base)" },
               { keys: ["/"], label: "Focus search" },
               { keys: ["⌘", "V"], label: "Save link from clipboard" },
               { keys: ["⌘", "N"], label: "New note" },
@@ -779,6 +870,27 @@ const StashApp = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* AI Chat Dialogs */}
+      <AIChatDialog
+        mode="kb"
+        items={items}
+        open={kbChatOpen}
+        onOpenChange={setKbChatOpen}
+        onOpenAISettings={() => setAiSettingsOpen(true)}
+      />
+      
+      {chatItem && (
+        <AIChatDialog
+          mode="item"
+          item={chatItem}
+          open={itemChatOpen}
+          onOpenChange={setItemChatOpen}
+          onOpenAISettings={() => setAiSettingsOpen(true)}
+        />
+      )}
+      
+      <AISettingsDialog open={aiSettingsOpen} onOpenChange={setAiSettingsOpen} />
     </div>
   );
 };
