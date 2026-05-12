@@ -96,7 +96,7 @@ npm run pages:deploy
 This will:
 1. Build the frontend
 2. Deploy to Cloudflare Pages
-3. Your site will be at: `https://astralstash.pages.dev`
+3. Your site will be at: `https://yourname.pages.dev`
 
 ### Option B: Deploy Both at Once
 
@@ -106,13 +106,35 @@ npm run deploy:all
 
 ## Step 5: Configure Cloudflare Pages Environment Variables
 
+**Important:** The frontend needs to know where your API is located.
+
+### Method 1: Set in Cloudflare Dashboard (Recommended)
+
 1. Go to [Cloudflare Dashboard](https://dash.cloudflare.com)
 2. Navigate to **Pages** → **astralstash**
 3. Go to **Settings** → **Environment Variables**
-4. Add **Production** variable:
+4. Click **Add variable**
+5. Add **Production** variable:
    - Name: `VITE_API_URL`
    - Value: `https://astralstash-api.yourname.workers.dev/api`
-5. Click **Save**
+6. Click **Save**
+7. Go to **Deployments** → Click **Retry deployment** on latest
+
+### Method 2: Use .env.production File (Quick Deploy)
+
+Create `.env.production` (already gitignored):
+
+```env
+VITE_API_URL=https://astralstash-api.yourname.workers.dev/api
+```
+
+Then deploy:
+
+```bash
+npm run pages:deploy
+```
+
+**Note:** Method 1 is better for production as it keeps the URL out of your codebase entirely.
 
 ### For Preview Deployments (Optional)
 
@@ -130,7 +152,7 @@ Or push to GitHub if you have automatic deployments set up.
 
 ## Step 7: Verify Deployment
 
-1. **Visit your site**: https://astralstash.pages.dev
+1. **Visit your site**: https://yourname.pages.dev
 2. **Create an account** (if ALLOW_SIGNUPS is true)
 3. **Test login**
 4. **Add an item**
