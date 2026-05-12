@@ -15,9 +15,9 @@
     "worker:deploy": "wrangler deploy",
     "pages:deploy": "npm run build && wrangler pages deploy dist --project-name=astralstash",
     "deploy:all": "npm run build && wrangler pages deploy dist --project-name=astralstash && wrangler deploy",
-    "db:init": "wrangler d1 execute astralstash --file=./workers/schema.sql",
-    "db:migrate": "wrangler d1 execute astralstash --file=./workers/schema.sql",
-    "setup": "bash scripts/setup-db.sh"
+    "db:init": "wrangler d1 execute astralstash --remote --file=./workers/schema.sql",
+    "db:init:local": "wrangler d1 execute astralstash --local --file=./workers/schema.sql",
+    "db:backup": "wrangler d1 export astralstash --remote --output=./backup.sql"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

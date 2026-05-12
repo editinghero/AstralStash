@@ -8,8 +8,15 @@ database_name = "astralstash"
 database_id = "7b55e245-78f2-44b2-9ba5-8da519f9740a"
 
 [vars]
-JWT_SECRET = "jwt-secret-is-always-nicetochangeithink33399%"
-ENVIRONMENT = "development"
+# Non-sensitive variables only
+ENVIRONMENT = "production"
 ALLOW_SIGNUPS = "true"
 
 
+# IMPORTANT: Set JWT_SECRET using Cloudflare dashboard or wrangler CLI:
+# Generate a secure key:
+# node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+
+# wrangler secret put JWT_SECRET
+
+# Note: JWT_SECRET is also used for encrypting AI API keys in the database

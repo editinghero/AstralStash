@@ -5,16 +5,30 @@ Your personal space for links, notes, and ideas — beautifully organized, secur
 
 ##  Features
 
-- **Use 
+###  AI-Powered Features
+- **Use Your Own LLM** - Bring your own API key (Google Gemini or OpenAI-compatible)
+- **AI Chat** - Ask questions about any saved item or your entire knowledge base
+- **Smart Tagging** - Auto-generate relevant tags for your items
+- **Auto Summarize** - Get AI-generated summaries of your content
+- **Encrypted API Keys** - Your API keys are encrypted and stored securely in the database
+- **Privacy First** - AI is off by default, you control when to enable it
+
+###  Security & Privacy
 - **Secure & Private** - Your data is encrypted and protected with your account
+- **Brute Force Protection** - Maximum 9 login attempts, then 9-hour lockout
+- **No Tracking** - We don't track your activity or sell your data
+
+###  Content Management
 - **Save Everything** - Links, notes, and ideas in one beautiful place
-- **Customize Your Space** - Choose your profile color and theme (dark/light)
-- **Find Instantly** - Powerful AI search across all your content
 - **Organize Easily** - Tags, collections, and smart filters
-- **Works Everywhere** - Install as an app on any device (PWA)
-- **Lightning Fast** - Edge-powered for instant access worldwide
 - **Pin Important Items** - Keep favorites at the top
 - **Export Your Data** - Download everything as JSON anytime
+
+###  Customization
+- **Customize Your Space** - Choose your profile color and theme (dark/light)
+- **Find Instantly** - Powerful search across all your content
+- **Works Everywhere** - Install as an app on any device (PWA)
+- **Lightning Fast** - Edge-powered for instant access worldwide
 
 ## Getting Started
 
@@ -49,14 +63,43 @@ That's it! You're ready to start saving.
 - Pick a color
 - Click "Save"
 
-### 3. Quick Tips
+### 3. Set Up AI Features (Optional)
 
-- **Paste anywhere:** Press `Ctrl+V` (or `Cmd+V`) to instantly save a URL
-- **Search:** Press `/` to jump to search
-- **Command palette:** Press `Ctrl+K` (or `Cmd+K`) for quick actions
+**Configure Your AI Provider:**
+1. Go to **Profile Settings**
+2. Scroll to **AI Configuration**
+3. Choose your provider:
+   - **Google Gemini** (Free tier available)
+   - **OpenAI-compatible API** (OpenAI, Groq, etc.)
+4. Enter your API key
+5. Select a model
+6. Click **Test Connection** to verify
+7. Click **Save**
+
+**Your API key is encrypted and stored securely in the database.**
+
+**Use AI Features:**
+- **Chat with an item:** Click the ✨ button on any card
+- **Knowledge Base chat:** Press `Cmd+Shift+K` (or `Ctrl+Shift+K`) or click the AI button in the header
+- **Auto-tag:** When adding an item, click "Auto-tag" to generate relevant tags
+- **Summarize:** Click "Summarize" to get an AI-generated summary
+
+### 4. Quick Tips
+
+**Keyboard Shortcuts:**
+- **Paste anywhere:** `Ctrl+V` (or `Cmd+V`) to instantly save a URL
+- **Search:** `/` to jump to search
+- **Command palette:** `Ctrl+K` (or `Cmd+K`) for quick actions
+- **AI Knowledge Base:** `Ctrl+Shift+K` (or `Cmd+Shift+K`) to chat with your entire stash
+
+**Organization:**
 - **Pin items:** Click the pin icon to keep important items at the top
 - **Collections:** Organize items into collections for better organization
+- **Tags:** Add tags to items for easy filtering
+
+**Customization:**
 - **Dark mode:** Toggle in the header for comfortable viewing
+- **Profile colors:** Choose from 6 beautiful color options in settings
 
 ## Security
 
@@ -84,6 +127,46 @@ AstralStash works as a Progressive Web App (PWA):
 3. Change your name
 4. Pick a profile color (6 beautiful options)
 5. Update your password if needed
+
+## AI Features
+
+AstralStash supports AI-powered features using your own API key. Your API key is encrypted and stored securely in the database.
+
+### Supported Providers
+
+**Google Gemini (Free tier available)**
+- Models: `gemini-2.5-flash`, `gemini-2.5-flash-lite`, `gemini-2.5-pro`, `gemini-3.1-flash-lite`
+- Gemma models: `gemma-4-31b-it`, `gemma-4-26b-a4b-it`, `gemma-3-27b-it`
+- Get API key: [Google AI Studio](https://aistudio.google.com/apikey)
+
+**OpenAI-compatible APIs**
+- Works with OpenAI, Groq, and other compatible endpoints
+- Configure custom endpoint URL and model
+
+### How to Use
+
+1. **Configure AI:**
+   - Go to Profile Settings → AI Configuration
+   - Select your provider
+   - Enter API key
+   - Choose a model
+   - Test connection and save
+
+2. **Chat with Items:**
+   - Click the ✨ button on any card
+   - Ask questions about that specific item
+   - Get contextual answers
+
+3. **Knowledge Base Chat:**
+   - Press `Cmd+Shift+K` (or `Ctrl+Shift+K`)
+   - Or click the AI button in the header
+   - Ask questions about your entire stash
+   - AI has access to all your saved content
+
+4. **Auto-tag & Summarize:**
+   - When adding a new item, click "Auto-tag"
+   - Click "Summarize" to generate a summary
+   - AI analyzes the content and suggests relevant tags/summaries
 
 ## Use Cases
 
