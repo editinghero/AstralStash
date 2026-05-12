@@ -5,10 +5,11 @@ Your personal space for links, notes, and ideas — beautifully organized, secur
 
 ##  Features
 
+- **Use 
 - **Secure & Private** - Your data is encrypted and protected with your account
 - **Save Everything** - Links, notes, and ideas in one beautiful place
 - **Customize Your Space** - Choose your profile color and theme (dark/light)
-- **Find Instantly** - Powerful search across all your content
+- **Find Instantly** - Powerful AI search across all your content
 - **Organize Easily** - Tags, collections, and smart filters
 - **Works Everywhere** - Install as an app on any device (PWA)
 - **Lightning Fast** - Edge-powered for instant access worldwide

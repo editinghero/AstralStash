@@ -106,23 +106,8 @@ export default {
       if (path.startsWith('/api/ai')) {
         console.log('AI route matched:', path, method);
         try {
-          // Hono expects the path to start from root
-          const honoPath = path.replace('/api/ai', '') || '/';
-          console.log('Hono path:', honoPath);
-          
-          // Create new URL with adjusted path
-          const honoUrl = new URL(request.url);
-          honoUrl.pathname = honoPath;
-          
-          // Create new request for Hono
-          const honoRequest = new Request(honoUrl.toString(), {
-            method: request.method,
-            headers: request.headers,
-            body: request.method !== 'GET' && request.method !== 'HEAD' ? request.body : null,
-          });
-          
-          // Call Hono with env context
-          const honoResponse = await ai.fetch(honoRequest, env, {});
+          // Call Hono with env context directly with the original request
+          const honoResponse = await ai.fetch(request, env, {});
           console.log('Hono response status:', honoResponse.status);
           return addCors(honoResponse);
         } catch (error: any) {

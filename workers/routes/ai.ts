@@ -3,7 +3,7 @@ import { Env, AIConfigRequest, AIConfigResponse } from '../types';
 import { authenticateRequest } from '../utils/auth';
 import { encryptApiKey, decryptApiKey } from '../utils/encryption';
 
-const ai = new Hono<{ Bindings: Env }>();
+const ai = new Hono<{ Bindings: Env }>().basePath('/api/ai');
 
 // Helper to verify auth and return userId
 async function verifyAuth(c: any): Promise<string | null> {
