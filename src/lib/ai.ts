@@ -28,7 +28,7 @@ export async function loadAIConfig(): Promise<AIConfig | null> {
     }
 
     // First, get the config metadata
-    const response = await fetch('/api/ai', {
+    const response = await fetch(`${import.meta.env.VITE_API_URL || '/api'}/ai`, {
       headers: {
         'Authorization': `Bearer ${token}`,
       },
@@ -46,7 +46,7 @@ export async function loadAIConfig(): Promise<AIConfig | null> {
     }
 
     // Then fetch the decrypted API key
-    const keyResponse = await fetch('/api/ai/key', {
+    const keyResponse = await fetch(`${import.meta.env.VITE_API_URL || '/api'}/ai/key`, {
       headers: {
         'Authorization': `Bearer ${token}`,
       },
@@ -96,7 +96,7 @@ export async function saveAIConfig(config: AIConfig): Promise<void> {
         base_url: config.baseUrl,
       };
 
-  const response = await fetch('/api/ai', {
+  const response = await fetch(`${import.meta.env.VITE_API_URL || '/api'}/ai`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -130,7 +130,7 @@ export async function clearAIConfig(): Promise<void> {
   const token = localStorage.getItem('auth_token');
   if (!token) return;
 
-  await fetch('/api/ai', {
+  await fetch(`${import.meta.env.VITE_API_URL || '/api'}/ai`, {
     method: 'DELETE',
     headers: {
       'Authorization': `Bearer ${token}`,
