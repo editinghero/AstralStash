@@ -98,7 +98,16 @@
 }
 
 @layer base {
-  * { @apply border-border; }
+  * {
+    @apply border-border;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  ::selection {
+    background-color: hsl(var(--primary) / 0.2);
+    color: inherit;
+  }
+
   body {
     @apply bg-background text-foreground antialiased;
     font-family: 'Inter', system-ui, sans-serif;
@@ -136,9 +145,14 @@
   .hover-lift {
     transition: var(--transition-smooth);
   }
-  .hover-lift:hover {
-    transform: translateY(-4px);
-    box-shadow: var(--shadow-lift);
+  @media (hover: hover) {
+    .hover-lift:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-lift);
+    }
+  }
+  .hover-lift:active {
+    transform: scale(0.98);
   }
 
   .gradient-warm { background: var(--gradient-warm); }
