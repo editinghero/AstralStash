@@ -23,8 +23,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         try {
           const { user } = await api.getProfile();
           setUser(user);
-        } catch (error) {
-          api.clearToken();
+        } catch (error: any) {
+          // Only clear token if it's explicitly an auth error, not a network error
+          if (error?.status === 401 || error?.status === 403 || error?.error === 'Unauthorized' || error?.error === 'User not found') {
+            api.clearToken();
+          }
         }
       }
       setLoading(false);

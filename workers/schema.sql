@@ -89,17 +89,20 @@ CREATE TABLE IF NOT EXISTS sessions (
 CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id);
 CREATE INDEX IF NOT EXISTS idx_sessions_token ON sessions(refresh_token);
 
--- AI Configuration (encrypted API keys)
+-- AI Configuration (encrypted API keys) - supports multiple providers per user
 CREATE TABLE IF NOT EXISTS ai_configs (
   id TEXT PRIMARY KEY,
-  user_id TEXT UNIQUE NOT NULL,
-  provider_type TEXT NOT NULL CHECK(provider_type IN ('gemini', 'openai-compat')),
+  user_id TEXT NOT NULL,
+  provider_type TEXT NOT NULL CHECK(provider_type IN ('gemini', 'groq', 'mistral', 'claude', 'openai', 'openai-compat', 'brave-search')),
   encrypted_api_key TEXT NOT NULL,
-  model_id TEXT NOT NULL,
+  model_id TEXT, -- Optional for brave-search
   base_url TEXT, -- For OpenAI-compatible providers
+  enable_search INTEGER DEFAULT 0, -- Enable web search (0 = false, 1 = true)
   created_at INTEGER NOT NULL,
   updated_at INTEGER NOT NULL,
-  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  UNIQUE(user_id, provider_type) -- One config per provider per user
 );
 
 CREATE INDEX IF NOT EXISTS idx_ai_configs_user ON ai_configs(user_id);
+CREATE INDEX IF NOT EXISTS idx_ai_configs_user_provider ON ai_configs(user_id, provider_type);

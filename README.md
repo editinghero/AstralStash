@@ -6,7 +6,8 @@ Your personal space for links, notes, and ideas — beautifully organized, secur
 ##  Features
 
 ###  AI-Powered Features
-- **Use Your Own LLM** - Bring your own API key (Google Gemini or OpenAI-compatible)
+- **6 AI Providers** - Google Gemini, Groq, Mistral, Claude, OpenAI, or OpenAI-compatible
+- **Web Search** - Native web search support for all providers (Brave Search for OpenAI-compatible)
 - **AI Chat** - Ask questions about any saved item or your entire knowledge base
 - **Smart Tagging** - Auto-generate relevant tags for your items
 - **Auto Summarize** - Get AI-generated summaries of your content
@@ -134,14 +135,47 @@ AstralStash supports AI-powered features using your own API key. Your API key is
 
 ### Supported Providers
 
-**Google Gemini (Free tier available)**
-- Models: `gemini-2.5-flash`, `gemini-2.5-flash-lite`, `gemini-2.5-pro`, `gemini-3.1-flash-lite`
-- Gemma models: `gemma-4-31b-it`, `gemma-4-26b-a4b-it`, `gemma-3-27b-it`
+**1. Google Gemini (Free tier available)**
+- Models: `gemini-2.5-flash`, `gemini-2.5-flash-lite`, `gemini-2.5-pro`, and Gemma models
+- Native Google Search support
 - Get API key: [Google AI Studio](https://aistudio.google.com/apikey)
 
-**OpenAI-compatible APIs**
-- Works with OpenAI, Groq, and other compatible endpoints
+**2. Groq**
+- Models: `groq/compound`, `llama-3.3-70b-versatile`, `mixtral-8x7b-32768`
+- Native web search on `groq/compound` model
+- Get API key: [Groq Console](https://console.groq.com/keys)
+
+**3. Mistral AI**
+- Models: `mistral-medium-latest`, `mistral-small-latest`, `mistral-large-latest`
+- Native web search support
+- Get API key: [Mistral Console](https://console.mistral.ai/api-keys)
+
+**4. Anthropic Claude**
+- Models: `claude-3-5-sonnet`, `claude-3-5-haiku`, `claude-3-opus`
+- Native web search support
+- Get API key: [Anthropic Console](https://console.anthropic.com/settings/keys)
+
+**5. OpenAI**
+- Models: `gpt-4o-mini`, `gpt-4o`, `gpt-4-turbo`, `gpt-3.5-turbo`
+- Native web search support
+- Get API key: [OpenAI Platform](https://platform.openai.com/api-keys)
+
+**6. OpenAI-Compatible**
+- Works with Ollama, LM Studio, and other compatible endpoints
+- Brave Search API for web search (enter API key in settings)
 - Configure custom endpoint URL and model
+
+### Web Search
+
+All providers support web search to access current information:
+- **Gemini**: Uses Google Search (native)
+- **Groq**: Uses Groq web search (native)
+- **Mistral**: Uses Mistral web search (native)
+- **Claude**: Uses Claude web search (native)
+- **OpenAI**: Uses OpenAI web search (native)
+- **OpenAI-Compatible**: Uses Brave Search API (enter API key in settings)
+
+To enable web search with OpenAI-compatible providers, get a free Brave Search API key at [brave.com/search/api](https://brave.com/search/api/) (2000 queries/month free) and enter it in the AI settings dialog when configuring your provider.
 
 ### How to Use
 
@@ -150,6 +184,7 @@ AstralStash supports AI-powered features using your own API key. Your API key is
    - Select your provider
    - Enter API key
    - Choose a model
+   - Enable web search (optional)
    - Test connection and save
 
 2. **Chat with Items:**

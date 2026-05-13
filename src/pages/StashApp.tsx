@@ -29,6 +29,7 @@ import { useAI } from "@/contexts/AIContext";
 import { smartSearch } from "@/lib/ai";
 import { AIChatDialog } from "@/components/AIChatDialog";
 import { AISettingsDialog } from "@/components/AISettingsDialog";
+import { PopupSheet, PopupState } from "@/components/PopupSheet";
 
 type Filter = "all" | "link" | "note" | "idea" | "pinned" | "trash" | "collection";
 type Sort = "newest" | "oldest" | "title" | "type";
@@ -73,7 +74,7 @@ const StashApp = () => {
   const { theme, toggle: toggleTheme } = useTheme();
   const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
-  
+
   // AI state
   const { config, isConfigured } = useAI();
   const [smartSearchEnabled, setSmartSearchEnabled] = useState(false);
@@ -83,6 +84,7 @@ const StashApp = () => {
   const [itemChatOpen, setItemChatOpen] = useState(false);
   const [chatItem, setChatItem] = useState<StashItem | null>(null);
   const [aiSettingsOpen, setAiSettingsOpen] = useState(false);
+  const [popupState, setPopupState] = useState<PopupState | null>(null);
 
   // Load items and collections from API
   useEffect(() => {
@@ -144,21 +146,21 @@ const StashApp = () => {
     const onKey = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement | null;
       const inField = target && ["INPUT", "TEXTAREA"].includes(target.tagName);
-      
+
       // ⌘⇧K or Ctrl+Shift+K - AI Knowledge Base Chat
       if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === "k") {
-        e.preventDefault(); 
+        e.preventDefault();
         if (isConfigured) {
           setKbChatOpen(true);
         }
         return;
       }
-      
+
       // ⌘K or Ctrl+K - Command Palette (only if Shift is NOT pressed)
       if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === "k") {
         e.preventDefault(); setPaletteOpen((o) => !o); return;
       }
-      
+
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "n" && !inField) {
         e.preventDefault(); setEditing(null); setInitialUrl(undefined); setInitialTab("note"); setOpen(true);
       }
@@ -220,7 +222,7 @@ const StashApp = () => {
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     const source = filter === "trash" ? trashed : live;
-    
+
     let list = source.filter((i) => {
       if (filter === "link" || filter === "note" || filter === "idea") {
         if (i.type !== filter) return false;
@@ -229,17 +231,17 @@ const StashApp = () => {
       if (filter === "collection" && i.collectionId !== activeCollection) return false;
       if (activeTag && !i.tags.includes(activeTag)) return false;
       if (!q) return true;
-      
+
       // If smart search is enabled and we have results, filter by those IDs
       if (smartSearchEnabled && smartSearchResults) {
         return smartSearchResults.includes(i.id);
       }
-      
+
       // Otherwise use regular text search
       const hay = [i.title, i.description ?? "", i.content ?? "", i.url ?? "", i.tags.join(" ")].join(" ").toLowerCase();
       return hay.includes(q);
     });
-    
+
     // If smart search is enabled and we have results, sort by relevance (order in smartSearchResults)
     if (smartSearchEnabled && smartSearchResults && q) {
       list = [...list].sort((a, b) => {
@@ -259,7 +261,7 @@ const StashApp = () => {
         return a.title.localeCompare(b.title);
       });
     }
-    
+
     return list;
   }, [live, trashed, query, filter, activeCollection, activeTag, sort, smartSearchEnabled, smartSearchResults]);
 
@@ -292,8 +294,8 @@ const StashApp = () => {
       await api.updateItem(id, { deleted: true, deletedAt: Date.now() });
       setItems((prev) => prev.map((i) => i.id === id ? { ...i, deleted: true, deletedAt: Date.now() } : i));
       toast("Moved to trash", {
-        action: { 
-          label: "Undo", 
+        action: {
+          label: "Undo",
           onClick: async () => {
             try {
               await api.updateItem(id, { deleted: false, deletedAt: null });
@@ -390,7 +392,7 @@ const StashApp = () => {
     <aside className="space-y-6 flex flex-col h-full overflow-y-auto sidebar-scroll w-full">
       <div className="space-y-6 px-1">
         <Button onClick={() => openAdd("link")}
-          className="w-full rounded-xl gradient-primary text-primary-foreground shadow-pink hover:opacity-95 h-11 transition-transform hover:scale-[1.02] shrink-0">
+          className="w-full rounded-xl gradient-primary text-primary-foreground shadow-pink hover:opacity-95 h-11 transition-transform shrink-0">
           <Plus className="w-4 h-4 mr-1 shrink-0" /> <span className="truncate">Add new</span>
         </Button>
 
@@ -399,149 +401,212 @@ const StashApp = () => {
           className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-xl text-sm border border-border bg-muted/40 hover:bg-muted text-muted-foreground transition shrink-0 min-w-0"
         >
           <span className="flex items-center gap-2 min-w-0">
-            <CommandIcon className="w-4 h-4 shrink-0" /> 
+            <CommandIcon className="w-4 h-4 shrink-0" />
             <span className="truncate">Quick search</span>
           </span>
           <kbd className="px-1.5 py-0.5 rounded bg-background text-[10px] font-mono shrink-0">⌘K</kbd>
         </button>
 
         <nav className="space-y-1 shrink-0 w-full">
-        <SideItem icon={LayoutGrid} label="All items" count={counts.all}
-          active={filter === "all" && !activeTag}
-          onClick={() => { setFilter("all"); setActiveTag(null); setActiveCollection(null); setSidebarOpen(false); }} />
-        <SideItem icon={Link2} label="Links" count={counts.link}
-          active={filter === "link"}
-          onClick={() => { setFilter("link"); setActiveTag(null); setActiveCollection(null); setSidebarOpen(false); }} />
-        <SideItem icon={FileText} label="Notes" count={counts.note}
-          active={filter === "note"}
-          onClick={() => { setFilter("note"); setActiveTag(null); setActiveCollection(null); setSidebarOpen(false); }} />
-        <SideItem icon={Lightbulb} label="Ideas" count={counts.idea}
-          active={filter === "idea"}
-          onClick={() => { setFilter("idea"); setActiveTag(null); setActiveCollection(null); setSidebarOpen(false); }} />
-        <SideItem icon={Pin} label="Pinned" count={counts.pinned}
-          active={filter === "pinned"}
-          onClick={() => { setFilter("pinned"); setActiveTag(null); setActiveCollection(null); setSidebarOpen(false); }} />
-        <SideItem icon={Trash2} label="Trash" count={counts.trash}
-          active={filter === "trash"}
-          onClick={() => { setFilter("trash"); setActiveTag(null); setActiveCollection(null); setSidebarOpen(false); }} />
-      </nav>
+          <SideItem icon={LayoutGrid} label="All items" count={counts.all}
+            active={filter === "all" && !activeTag}
+            onClick={() => { setFilter("all"); setActiveTag(null); setActiveCollection(null); setSidebarOpen(false); }} />
+          <SideItem icon={Link2} label="Links" count={counts.link}
+            active={filter === "link"}
+            onClick={() => { setFilter("link"); setActiveTag(null); setActiveCollection(null); setSidebarOpen(false); }} />
+          <SideItem icon={FileText} label="Notes" count={counts.note}
+            active={filter === "note"}
+            onClick={() => { setFilter("note"); setActiveTag(null); setActiveCollection(null); setSidebarOpen(false); }} />
+          <SideItem icon={Lightbulb} label="Ideas" count={counts.idea}
+            active={filter === "idea"}
+            onClick={() => { setFilter("idea"); setActiveTag(null); setActiveCollection(null); setSidebarOpen(false); }} />
+          <SideItem icon={Pin} label="Pinned" count={counts.pinned}
+            active={filter === "pinned"}
+            onClick={() => { setFilter("pinned"); setActiveTag(null); setActiveCollection(null); setSidebarOpen(false); }} />
+          <SideItem icon={Trash2} label="Trash" count={counts.trash}
+            active={filter === "trash"}
+            onClick={() => { setFilter("trash"); setActiveTag(null); setActiveCollection(null); setSidebarOpen(false); }} />
+        </nav>
 
-      <Collapsible open={collectionsOpen} onOpenChange={setCollectionsOpen} className="shrink-0 w-full">
-        <div className="flex items-center justify-between px-3 mb-2 gap-2 min-w-0">
-          <CollapsibleTrigger className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-muted-foreground hover:text-foreground transition min-w-0">
-            {collectionsOpen ? <ChevronDown className="w-3 h-3 shrink-0" /> : <ChevronRight className="w-3 h-3 shrink-0" />}
-            <FolderOpen className="w-3 h-3 shrink-0" /> 
-            <span className="truncate">Collections</span>
-          </CollapsibleTrigger>
-          <button onClick={() => { setEditingCollection(null); setCollectionOpen(true); }}
-            className="text-muted-foreground hover:text-primary transition shrink-0" aria-label="New collection">
-            <Plus className="w-3.5 h-3.5" />
-          </button>
-        </div>
-        <CollapsibleContent className="w-full">
-          {collections.length === 0 ? (
-            <p className="px-3 text-xs text-muted-foreground">No collections yet</p>
-          ) : (
-            <div className="space-y-0.5 w-full">
-              {collections.map((c) => (
-                <div key={c.id} className="group/col flex items-center min-w-0 w-full gap-1">
+        <Collapsible open={collectionsOpen} onOpenChange={setCollectionsOpen} className="shrink-0 w-full">
+          <div className="flex items-center justify-between px-3 mb-2 gap-2 min-w-0">
+            <CollapsibleTrigger className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-muted-foreground hover:text-foreground transition min-w-0">
+              {collectionsOpen ? <ChevronDown className="w-3 h-3 shrink-0" /> : <ChevronRight className="w-3 h-3 shrink-0" />}
+              <FolderOpen className="w-3 h-3 shrink-0" />
+              <span className="truncate">Collections</span>
+            </CollapsibleTrigger>
+            <button onClick={() => { setEditingCollection(null); setCollectionOpen(true); }}
+              className="text-muted-foreground hover:text-primary transition shrink-0" aria-label="New collection">
+              <Plus className="w-3.5 h-3.5" />
+            </button>
+          </div>
+          <CollapsibleContent className="w-full">
+            {collections.length === 0 ? (
+              <p className="px-3 text-xs text-muted-foreground">No collections yet</p>
+            ) : (
+              <div className="space-y-0.5 w-full">
+                {collections.slice(0, 3).map((c) => (
+                  <div key={c.id} className="group/col flex items-center min-w-0 w-full gap-1">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button
+                          onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add('ring-2', 'ring-primary', 'bg-muted'); }}
+                          onDragLeave={(e) => { e.currentTarget.classList.remove('ring-2', 'ring-primary', 'bg-muted'); }}
+                          onDrop={async (e) => {
+                            e.preventDefault();
+                            e.currentTarget.classList.remove('ring-2', 'ring-primary', 'bg-muted');
+                            const itemId = e.dataTransfer.getData("application/stash-item-id");
+                            if (itemId) {
+                              const itemToUpdate = items.find(i => i.id === itemId);
+                              if (itemToUpdate && itemToUpdate.collectionId !== c.id) {
+                                await updateItem({ ...itemToUpdate, collectionId: c.id });
+                                toast.success(`Moved to ${c.name}`);
+                              }
+                            }
+                          }}
+                          className={`flex-1 flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors min-w-0 ${filter === "collection" && activeCollection === c.id ? "bg-accent text-accent-foreground" : "hover:bg-muted"
+                            }`}
+                        >
+                          <span className="flex items-center gap-2 truncate min-w-0 flex-1">
+                            <span className="text-base leading-none shrink-0">{c.emoji || "📁"}</span>
+                            <span className="truncate min-w-0">{c.name}</span>
+                          </span>
+                          <span className="text-xs text-muted-foreground shrink-0 ml-2">{collectionCounts.get(c.id) ?? 0}</span>
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start">
+                        <DropdownMenuItem onClick={() => { setFilter("collection"); setActiveCollection(c.id); setActiveTag(null); setSidebarOpen(false); }}>
+                          Open inline
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => { setPopupState({ type: 'collection', id: c.id }); setSidebarOpen(false); }}>
+                          Open as page
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button className="opacity-0 group-hover/col:opacity-100 p-1 text-muted-foreground hover:text-foreground shrink-0" aria-label="Collection options">
+                          <MoreHorizontal className="w-4 h-4" />
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => { setEditingCollection(c); setCollectionOpen(true); }}>Rename</DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem className="text-destructive" onClick={async () => {
+                          try {
+                            await api.deleteCollection(c.id);
+                            setCollections((prev) => prev.filter((x) => x.id !== c.id));
+                            setItems((prev) => prev.map((i) => i.collectionId === c.id ? { ...i, collectionId: null } : i));
+                            if (activeCollection === c.id) { setFilter("all"); setActiveCollection(null); }
+                            toast.success("Collection deleted");
+                          } catch (error) {
+                            console.error('Failed to delete collection:', error);
+                            toast.error('Failed to delete collection');
+                          }
+                        }}>Delete</DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                ))}
+                {collections.length > 0 && (
                   <button
-                    onClick={() => { setFilter("collection"); setActiveCollection(c.id); setActiveTag(null); setSidebarOpen(false); }}
-                    className={`flex-1 flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors min-w-0 ${
-                      filter === "collection" && activeCollection === c.id ? "bg-accent text-accent-foreground" : "hover:bg-muted"
-                    }`}
+                    onClick={() => { setPopupState({ type: 'folders-overview' }); setSidebarOpen(false); }}
+                    className="w-full text-left px-3 py-1.5 text-xs text-muted-foreground hover:text-primary transition-colors"
                   >
-                    <span className="flex items-center gap-2 truncate min-w-0 flex-1">
-                      <span className="text-base leading-none shrink-0">{c.emoji || "📁"}</span>
-                      <span className="truncate">{c.name}</span>
-                    </span>
-                    <span className="text-xs text-muted-foreground shrink-0 ml-2">{collectionCounts.get(c.id) ?? 0}</span>
+                    See all folders →
                   </button>
-                  <DropdownMenu>
+                )}
+              </div>
+            )}
+          </CollapsibleContent>
+        </Collapsible>
+
+        <Collapsible open={tagsOpen} onOpenChange={setTagsOpen} className="flex-1 min-h-0 overflow-hidden w-full">
+          <CollapsibleTrigger className="flex items-center gap-2 px-3 mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground hover:text-foreground transition min-w-0">
+            {tagsOpen ? <ChevronDown className="w-3 h-3 shrink-0" /> : <ChevronRight className="w-3 h-3 shrink-0" />}
+            <TagIcon className="w-3 h-3 shrink-0" />
+            <span className="truncate">Tags</span>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="overflow-y-auto max-h-full w-full">
+            {tags.length === 0 ? (
+              <p className="px-3 text-xs text-muted-foreground">No tags yet</p>
+            ) : (
+              <div className="space-y-0.5 w-full">
+                {tags.slice(0, 3).map(([t, c]) => (
+                  <DropdownMenu key={t}>
                     <DropdownMenuTrigger asChild>
-                      <button className="opacity-0 group-hover/col:opacity-100 p-1 text-muted-foreground hover:text-foreground shrink-0" aria-label="Collection options">
-                        <MoreHorizontal className="w-4 h-4" />
+                      <button
+                        onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add('ring-2', 'ring-primary', 'bg-muted'); }}
+                        onDragLeave={(e) => { e.currentTarget.classList.remove('ring-2', 'ring-primary', 'bg-muted'); }}
+                        onDrop={async (e) => {
+                          e.preventDefault();
+                          e.currentTarget.classList.remove('ring-2', 'ring-primary', 'bg-muted');
+                          const itemId = e.dataTransfer.getData("application/stash-item-id");
+                          if (itemId) {
+                            const itemToUpdate = items.find(i => i.id === itemId);
+                            if (itemToUpdate && !itemToUpdate.tags.includes(t)) {
+                              await updateItem({ ...itemToUpdate, tags: [...itemToUpdate.tags, t] });
+                              toast.success(`Tagged with #${t}`);
+                            }
+                          }
+                        }}
+                        className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors min-w-0 ${activeTag === t ? "bg-accent text-accent-foreground" : "hover:bg-muted"
+                          }`}
+                      >
+                        <span className="flex items-center gap-2 truncate min-w-0 flex-1">
+                          <span className={`w-2 h-2 rounded-full shrink-0 ${tagColor(t)}`} />
+                          <span className="truncate min-w-0">{t}</span>
+                        </span>
+                        <span className="text-xs text-muted-foreground shrink-0 ml-2">{c}</span>
                       </button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => { setEditingCollection(c); setCollectionOpen(true); }}>Rename</DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem className="text-destructive" onClick={async () => {
-                        try {
-                          await api.deleteCollection(c.id);
-                          setCollections((prev) => prev.filter((x) => x.id !== c.id));
-                          setItems((prev) => prev.map((i) => i.collectionId === c.id ? { ...i, collectionId: null } : i));
-                          if (activeCollection === c.id) { setFilter("all"); setActiveCollection(null); }
-                          toast.success("Collection deleted");
-                        } catch (error) {
-                          console.error('Failed to delete collection:', error);
-                          toast.error('Failed to delete collection');
-                        }
-                      }}>Delete</DropdownMenuItem>
+                    <DropdownMenuContent align="start">
+                      <DropdownMenuItem onClick={() => { setActiveTag(activeTag === t ? null : t); setSidebarOpen(false); }}>
+                        Filter inline
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => { setPopupState({ type: 'tag', name: t }); setSidebarOpen(false); }}>
+                        Open tag page
+                      </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
-                </div>
-              ))}
-            </div>
-          )}
-        </CollapsibleContent>
-      </Collapsible>
+                ))}
+                {tags.length > 0 && (
+                  <button
+                    onClick={() => { setPopupState({ type: 'tags-overview' }); setSidebarOpen(false); }}
+                    className="w-full text-left px-3 py-1.5 text-xs text-muted-foreground hover:text-primary transition-colors"
+                  >
+                    See all tags →
+                  </button>
+                )}
+              </div>
+            )}
+          </CollapsibleContent>
+        </Collapsible>
 
-      <Collapsible open={tagsOpen} onOpenChange={setTagsOpen} className="flex-1 min-h-0 overflow-hidden w-full">
-        <CollapsibleTrigger className="flex items-center gap-2 px-3 mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground hover:text-foreground transition min-w-0">
-          {tagsOpen ? <ChevronDown className="w-3 h-3 shrink-0" /> : <ChevronRight className="w-3 h-3 shrink-0" />}
-          <TagIcon className="w-3 h-3 shrink-0" /> 
-          <span className="truncate">Tags</span>
-        </CollapsibleTrigger>
-        <CollapsibleContent className="overflow-y-auto max-h-full w-full">
-          {tags.length === 0 ? (
-            <p className="px-3 text-xs text-muted-foreground">No tags yet</p>
-          ) : (
-            <div className="space-y-0.5 w-full">
-              {tags.map(([t, c]) => (
-                <button
-                  key={t}
-                  onClick={() => { setActiveTag(activeTag === t ? null : t); setSidebarOpen(false); }}
-                  className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors min-w-0 ${
-                    activeTag === t ? "bg-accent text-accent-foreground" : "hover:bg-muted"
-                  }`}
-                >
-                  <span className="flex items-center gap-2 truncate min-w-0 flex-1">
-                    <span className={`w-2 h-2 rounded-full shrink-0 ${tagColor(t)}`} />
-                    <span className="truncate">{t}</span>
-                  </span>
-                  <span className="text-xs text-muted-foreground shrink-0 ml-2">{c}</span>
-                </button>
-              ))}
-            </div>
+        <div className="pt-4 border-t border-border space-y-1 shrink-0">
+          {isConfigured && (
+            <button onClick={() => { setKbChatOpen(true); setSidebarOpen(false); }}
+              className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm hover:bg-muted text-foreground/80 transition">
+              <Sparkles className="w-4 h-4 text-primary" /> Ask AI
+            </button>
           )}
-        </CollapsibleContent>
-      </Collapsible>
-
-      <div className="pt-4 border-t border-border space-y-1 shrink-0">
-        {isConfigured && (
-          <button onClick={() => { setKbChatOpen(true); setSidebarOpen(false); }}
+          <button onClick={() => exportItems(items, collections)}
             className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm hover:bg-muted text-foreground/80 transition">
-            <Sparkles className="w-4 h-4 text-primary" /> Ask AI
+            <Download className="w-4 h-4" /> Export JSON
           </button>
-        )}
-        <button onClick={() => exportItems(items, collections)}
-          className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm hover:bg-muted text-foreground/80 transition">
-          <Download className="w-4 h-4" /> Export JSON
-        </button>
-        <button onClick={importJson}
-          className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm hover:bg-muted text-foreground/80 transition">
-          <Upload className="w-4 h-4" /> Import JSON
-        </button>
-        <button onClick={() => setBookmarkletOpen(true)}
-          className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm hover:bg-muted text-foreground/80 transition">
-          <Bookmark className="w-4 h-4" /> Bookmarklet
-        </button>
-        <button onClick={() => setShortcutsOpen(true)}
-          className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm hover:bg-muted text-foreground/80 transition">
-          <Keyboard className="w-4 h-4" /> Shortcuts
-        </button>
-      </div>
+          <button onClick={importJson}
+            className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm hover:bg-muted text-foreground/80 transition">
+            <Upload className="w-4 h-4" /> Import JSON
+          </button>
+          <button onClick={() => setBookmarkletOpen(true)}
+            className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm hover:bg-muted text-foreground/80 transition">
+            <Bookmark className="w-4 h-4" /> Bookmarklet
+          </button>
+          <button onClick={() => setShortcutsOpen(true)}
+            className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm hover:bg-muted text-foreground/80 transition">
+            <Keyboard className="w-4 h-4" /> Shortcuts
+          </button>
+        </div>
       </div>
     </aside>
   );
@@ -581,11 +646,10 @@ const StashApp = () => {
             {isConfigured && (
               <button
                 onClick={() => setSmartSearchEnabled((s) => !s)}
-                className={`absolute right-[4.5rem] top-1/2 -translate-y-1/2 px-2 py-1 rounded-full text-[10px] font-medium transition-colors ${
-                  smartSearchEnabled
+                className={`absolute right-[4.5rem] top-1/2 -translate-y-1/2 px-2 py-1 rounded-full text-[10px] font-medium transition-colors ${smartSearchEnabled
                     ? "bg-primary text-primary-foreground"
                     : "bg-muted text-muted-foreground hover:bg-accent"
-                }`}
+                  }`}
                 title={smartSearchEnabled ? "Smart search ON" : "Smart search OFF"}
               >
                 {smartSearching ? <Loader2 className="w-3 h-3 animate-spin" /> : "✨ AI"}
@@ -612,7 +676,7 @@ const StashApp = () => {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="rounded-full">
-                  <div 
+                  <div
                     className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium"
                     style={{ backgroundColor: user?.profile_color || '#FFF0F3', color: '#1A2B3C' }}
                   >
@@ -640,7 +704,7 @@ const StashApp = () => {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="rounded-full">
-                  <div 
+                  <div
                     className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium"
                     style={{ backgroundColor: user?.profile_color || '#FFF0F3', color: '#1A2B3C' }}
                   >
@@ -879,7 +943,7 @@ const StashApp = () => {
         onOpenChange={setKbChatOpen}
         onOpenAISettings={() => setAiSettingsOpen(true)}
       />
-      
+
       {chatItem && (
         <AIChatDialog
           mode="item"
@@ -889,8 +953,20 @@ const StashApp = () => {
           onOpenAISettings={() => setAiSettingsOpen(true)}
         />
       )}
-      
+
       <AISettingsDialog open={aiSettingsOpen} onOpenChange={setAiSettingsOpen} />
+
+      <PopupSheet
+        initialState={popupState}
+        onOpenChange={(open) => { if (!open) setPopupState(null); }}
+        items={items}
+        collections={collections}
+        onItemEdit={openEdit}
+        onItemPin={togglePin}
+        onItemDelete={softDelete}
+        onItemEnlarge={openEnlarged}
+        onItemChat={isConfigured ? openItemChat : undefined}
+      />
     </div>
   );
 };
@@ -903,9 +979,8 @@ const SideItem = ({
 }) => (
   <button
     onClick={onClick}
-    className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm transition-all ${
-      active ? "bg-accent text-accent-foreground font-medium scale-[1.02]" : "hover:bg-muted text-foreground/80"
-    }`}
+    className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm transition-all ${active ? "bg-accent text-accent-foreground font-medium" : "hover:bg-muted text-foreground/80"
+      }`}
   >
     <span className="flex items-center gap-2.5">
       <Icon className="w-4 h-4" />
@@ -929,7 +1004,7 @@ const EmptyState = ({ onAdd, hasItems, trash }: { onAdd: () => void; hasItems: b
     <p className="text-muted-foreground max-w-sm mx-auto mb-6">
       {trash ? "Deleted items will appear here."
         : hasItems ? "Try a different search or clear your filters."
-        : "Paste any link or write a note to get started. Everything stays in your browser."}
+          : "Paste any link or write a note to get started. Everything stays in your browser."}
     </p>
     {!hasItems && !trash && (
       <Button onClick={onAdd} className="rounded-full gradient-primary text-primary-foreground shadow-pink hover:opacity-95 h-11 px-6">

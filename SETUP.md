@@ -66,27 +66,49 @@ After starting the app:
 2. Go to **Profile Settings**
 3. Scroll to **AI Configuration**
 4. Choose your provider:
-   - **Google Gemini** - Free tier available with models like `gemini-2.5-flash`
-   - **OpenAI-compatible API** - Works with OpenAI, Groq, or any compatible endpoint
+   - **Google Gemini** - Free tier available, native Google Search
+   - **Groq** - Fast inference, native web search on `groq/compound`
+   - **Mistral AI** - Native web search support
+   - **Anthropic Claude** - Native web search support
+   - **OpenAI** - Native web search support
+   - **OpenAI-compatible** - Works with Ollama, LM Studio, etc. (Brave Search fallback)
 5. Enter your API key (will be encrypted before storage)
 6. Select a model from the dropdown
-7. Click **Test Connection** to verify
-8. Click **Save**
+7. Enable web search (optional)
+8. Click **Test Connection** to verify
+9. Click **Save**
 
-**Supported Gemini Models:**
+**Supported Models by Provider:**
+
+**Gemini:**
 - `gemini-2.5-flash` (Recommended for free tier)
-- `gemini-2.5-flash-lite`
-- `gemini-2.5-pro`
-- `gemini-3.1-flash-lite`
-- `gemma-4-31b-it`
-- `gemma-4-26b-a4b-it`
-- `gemma-3-27b-it`
+- `gemini-2.5-flash-lite`, `gemini-2.5-pro`
+- Gemma models: `gemma-4-31b-it`, `gemma-4-26b-a4b-it`, `gemma-3-27b-it`
+
+**Groq:**
+- `groq/compound` (Recommended for web search)
+- `llama-3.3-70b-versatile`, `mixtral-8x7b-32768`
+
+**Mistral:**
+- `mistral-medium-latest`, `mistral-small-latest`, `mistral-large-latest`
+
+**Claude:**
+- `claude-3-5-sonnet-20241022`, `claude-3-5-haiku-20241022`
+
+**OpenAI:**
+- `gpt-4o-mini`, `gpt-4o`, `gpt-4-turbo`
+
+**Web Search:**
+- All providers support web search for accessing current information
+- OpenAI-compatible providers use Brave Search API (enter API key in settings)
+- Get free Brave Search API key at [brave.com/search/api](https://brave.com/search/api/) (2000 queries/month)
 
 **AI Features:**
 - Chat with individual items (✨ button on cards)
 - Knowledge Base chat (Cmd+Shift+K or AI button in header)
 - Auto-tag items when adding
 - Auto-summarize content
+- Web search for current information (when enabled)
 
 ## Manual Setup (if automated script fails)
 

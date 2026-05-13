@@ -1,11 +1,45 @@
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-export type AIProviderType = "gemini" | "openai-compat";
+export type AIProviderType = "gemini" | "groq" | "mistral" | "claude" | "openai" | "openai-compat";
 
 export interface GeminiConfig {
   type: "gemini";
   apiKey: string;
-  model: string; // default: "gemini-3.1-flash-lite"
+  model: string;
+  enableSearch?: boolean;
+  braveSearchApiKey?: string;
+}
+
+export interface GroqConfig {
+  type: "groq";
+  apiKey: string;
+  model: string; // default: "llama-3.3-70b-versatile"
+  enableSearch?: boolean; // Enable web search (native on compound)
+  braveSearchApiKey?: string; // Optional Brave Search API key
+}
+
+export interface MistralConfig {
+  type: "mistral";
+  apiKey: string;
+  model: string;
+  enableSearch?: boolean;
+  braveSearchApiKey?: string;
+}
+
+export interface ClaudeConfig {
+  type: "claude";
+  apiKey: string;
+  model: string;
+  enableSearch?: boolean;
+  braveSearchApiKey?: string;
+}
+
+export interface OpenAIConfig {
+  type: "openai";
+  apiKey: string;
+  model: string;
+  enableSearch?: boolean;
+  braveSearchApiKey?: string;
 }
 
 export interface OpenAICompatConfig {
@@ -13,13 +47,15 @@ export interface OpenAICompatConfig {
   baseUrl: string;   // e.g. https://api.openai.com
   apiKey: string;
   modelId: string;
+  enableSearch?: boolean; // Enable Brave Search fallback
+  braveSearchApiKey?: string; // Optional Brave Search API key
 }
 
-export type AIConfig = GeminiConfig | OpenAICompatConfig;
+export type AIConfig = GeminiConfig | GroqConfig | MistralConfig | ClaudeConfig | OpenAIConfig | OpenAICompatConfig;
 
 // ─── Persistence (now using database) ────────────────────────────────────────
 
-export async function loadAIConfig(): Promise<AIConfig | null> {
+export async function loadAIConfig(provider?: AIProviderType): Promise<AIConfig | null> {
   try {
     const token = localStorage.getItem('auth_token');
     if (!token) {
@@ -27,8 +63,12 @@ export async function loadAIConfig(): Promise<AIConfig | null> {
       return null;
     }
 
+    // Use stored active provider if no specific provider requested
+    const activeProvider = provider || localStorage.getItem('active_ai_provider') as AIProviderType | null;
+    const query = activeProvider ? `?provider=${activeProvider}` : '';
+
     // First, get the config metadata
-    const response = await fetch(`${import.meta.env.VITE_API_URL || '/api'}/ai`, {
+    const response = await fetch(`${import.meta.env.VITE_API_URL || '/api'}/ai${query}`, {
       headers: {
         'Authorization': `Bearer ${token}`,
       },
@@ -46,7 +86,7 @@ export async function loadAIConfig(): Promise<AIConfig | null> {
     }
 
     // Then fetch the decrypted API key
-    const keyResponse = await fetch(`${import.meta.env.VITE_API_URL || '/api'}/ai/key`, {
+    const keyResponse = await fetch(`${import.meta.env.VITE_API_URL || '/api'}/ai/key${query}`, {
       headers: {
         'Authorization': `Bearer ${token}`,
       },
@@ -59,19 +99,56 @@ export async function loadAIConfig(): Promise<AIConfig | null> {
 
     const keyData = await keyResponse.json();
 
-    if (keyData.provider_type === 'gemini') {
-      return {
-        type: 'gemini',
-        apiKey: keyData.api_key,
-        model: keyData.model_id,
-      };
-    } else {
-      return {
-        type: 'openai-compat',
-        baseUrl: keyData.base_url,
-        apiKey: keyData.api_key,
-        modelId: keyData.model_id,
-      };
+    // Map provider types to config objects
+    switch (keyData.provider_type) {
+      case 'gemini':
+        return {
+          type: 'gemini',
+          apiKey: keyData.api_key,
+          model: keyData.model_id,
+          enableSearch: keyData.enable_search,
+        };
+      case 'groq':
+        return {
+          type: 'groq',
+          apiKey: keyData.api_key,
+          model: keyData.model_id,
+          enableSearch: keyData.enable_search,
+          braveSearchApiKey: keyData.brave_search_api_key,
+        };
+      case 'mistral':
+        return {
+          type: 'mistral',
+          apiKey: keyData.api_key,
+          model: keyData.model_id,
+          enableSearch: keyData.enable_search,
+        };
+      case 'claude':
+        return {
+          type: 'claude',
+          apiKey: keyData.api_key,
+          model: keyData.model_id,
+          enableSearch: keyData.enable_search,
+        };
+      case 'openai':
+        return {
+          type: 'openai',
+          apiKey: keyData.api_key,
+          model: keyData.model_id,
+          enableSearch: keyData.enable_search,
+        };
+      case 'openai-compat':
+        return {
+          type: 'openai-compat',
+          baseUrl: keyData.base_url,
+          apiKey: keyData.api_key,
+          modelId: keyData.model_id,
+          enableSearch: keyData.enable_search,
+          braveSearchApiKey: keyData.brave_search_api_key,
+        };
+      default:
+        console.error('Unknown provider type:', keyData.provider_type);
+        return null;
     }
   } catch (error) {
     console.error('Error loading AI config:', error);
@@ -83,18 +160,64 @@ export async function saveAIConfig(config: AIConfig): Promise<void> {
   const token = localStorage.getItem('auth_token');
   if (!token) throw new Error('Not authenticated');
 
-  const body = config.type === 'gemini'
-    ? {
+  // Store active provider in localStorage so we load the right one on reload
+  localStorage.setItem('active_ai_provider', config.type);
+
+  let body: any;
+
+  switch (config.type) {
+    case 'gemini':
+      body = {
         provider_type: 'gemini',
         api_key: config.apiKey,
         model_id: config.model,
-      }
-    : {
+        enable_search: config.enableSearch || false,
+      };
+      break;
+    case 'groq':
+      body = {
+        provider_type: 'groq',
+        api_key: config.apiKey,
+        model_id: config.model,
+        enable_search: config.enableSearch || false,
+        brave_search_api_key: config.braveSearchApiKey || null,
+      };
+      break;
+    case 'mistral':
+      body = {
+        provider_type: 'mistral',
+        api_key: config.apiKey,
+        model_id: config.model,
+        enable_search: config.enableSearch || false,
+      };
+      break;
+    case 'claude':
+      body = {
+        provider_type: 'claude',
+        api_key: config.apiKey,
+        model_id: config.model,
+        enable_search: config.enableSearch || false,
+      };
+      break;
+    case 'openai':
+      body = {
+        provider_type: 'openai',
+        api_key: config.apiKey,
+        model_id: config.model,
+        enable_search: config.enableSearch || false,
+      };
+      break;
+    case 'openai-compat':
+      body = {
         provider_type: 'openai-compat',
         api_key: config.apiKey,
         model_id: config.modelId,
         base_url: config.baseUrl,
+        enable_search: config.enableSearch || false,
+        brave_search_api_key: config.braveSearchApiKey || null,
       };
+      break;
+  }
 
   const response = await fetch(`${import.meta.env.VITE_API_URL || '/api'}/ai`, {
     method: 'POST',
@@ -140,16 +263,87 @@ export async function clearAIConfig(): Promise<void> {
 
 // ─── Core call ────────────────────────────────────────────────────────────────
 
+// Brave Search API fallback (for providers without native search)
+// Free tier: 2000 queries/month with $5 credit
+async function searchBrave(query: string, apiKey?: string): Promise<string> {
+  try {
+    // Get Brave Search API key from config or environment
+    const braveApiKey = apiKey || import.meta.env.VITE_BRAVE_SEARCH_API_KEY;
+    if (!braveApiKey) {
+      console.warn('Brave Search API key not configured');
+      return 'Web search unavailable (API key not configured).';
+    }
+
+    const response = await fetch(
+      `https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(query)}&count=5`,
+      {
+        headers: {
+          'X-Subscription-Token': braveApiKey,
+          'Accept': 'application/json',
+        },
+      }
+    );
+
+    if (!response.ok) {
+      console.error('Brave Search API error:', response.status);
+      return 'Web search unavailable.';
+    }
+
+    const data = await response.json();
+    const results = data.web?.results || [];
+
+    if (results.length === 0) {
+      return 'No search results found.';
+    }
+
+    // Format results for AI context
+    const formatted = results
+      .slice(0, 5)
+      .map((r: any, i: number) =>
+        `[${i + 1}] ${r.title}\nURL: ${r.url}\n${r.description || ''}`
+      )
+      .join('\n\n');
+
+    return `Web Search Results:\n\n${formatted}`;
+  } catch (error) {
+    console.error('Brave Search error:', error);
+    return 'Web search unavailable.';
+  }
+}
+
 export async function callAI(
   config: AIConfig,
   systemPrompt: string,
   userMessage: string,
+  history: { role: "user" | "assistant"; text: string }[] = [],
   signal?: AbortSignal
 ): Promise<string> {
-  if (config.type === "gemini") {
-    return callGemini(config, systemPrompt, userMessage, signal);
-  } else {
-    return callOpenAICompat(config, systemPrompt, userMessage, signal);
+  // If Brave Search API key is configured and search is enabled,
+  // use Brave Search for ALL providers and disable their native search
+  const braveKey = (config as any).braveSearchApiKey;
+  let finalSystemPrompt = systemPrompt;
+  let finalConfig = config;
+
+  if (config.enableSearch && braveKey) {
+    const searchResults = await searchBrave(userMessage, braveKey);
+    finalSystemPrompt = `${systemPrompt}\n\nWeb Search Context:\n${searchResults}\n\nUse the above web search context to help answer the user's question accurately.`;
+    // Disable native search so provider doesn't also try to search
+    finalConfig = { ...config, enableSearch: false };
+  }
+
+  switch (finalConfig.type) {
+    case "gemini":
+      return callGemini(finalConfig, finalSystemPrompt, userMessage, history, signal);
+    case "groq":
+      return callGroq(finalConfig, finalSystemPrompt, userMessage, history, signal);
+    case "mistral":
+      return callMistral(finalConfig, finalSystemPrompt, userMessage, history, signal);
+    case "claude":
+      return callClaude(finalConfig, finalSystemPrompt, userMessage, history, signal);
+    case "openai":
+      return callOpenAI(finalConfig, finalSystemPrompt, userMessage, history, signal);
+    case "openai-compat":
+      return callOpenAICompat(finalConfig, finalSystemPrompt, userMessage, history, signal);
   }
 }
 
@@ -157,16 +351,32 @@ async function callGemini(
   config: GeminiConfig,
   systemPrompt: string,
   userMessage: string,
+  history: { role: "user" | "assistant"; text: string }[] = [],
   signal?: AbortSignal
 ): Promise<string> {
-  const model = config.model || "gemini-3.1-flash-lite";
+  const model = config.model || "gemini-2.5-flash";
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${config.apiKey}`;
 
-  const body = {
-    system_instruction: { parts: [{ text: systemPrompt }] },
-    contents: [{ role: "user", parts: [{ text: userMessage }] }],
+  let finalSystemPrompt = systemPrompt;
+  if (config.enableSearch) {
+    finalSystemPrompt += "\n\nUse web search tool to find relevant information if needed.";
+  }
+
+  const formattedHistory = history.map(m => ({
+    role: m.role === "assistant" ? "model" : "user",
+    parts: [{ text: m.text }]
+  }));
+
+  const body: any = {
+    system_instruction: { parts: [{ text: finalSystemPrompt }] },
+    contents: [...formattedHistory, { role: "user", parts: [{ text: userMessage }] }],
     generationConfig: { temperature: 0.3, maxOutputTokens: 1024 },
   };
+
+  // Enable Google Search if configured (native support)
+  if (config.enableSearch) {
+    body.tools = [{ googleSearch: {} }];
+  }
 
   const res = await fetch(url, {
     method: "POST",
@@ -184,19 +394,258 @@ async function callGemini(
   return data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
 }
 
+async function callGroq(
+  config: GroqConfig,
+  systemPrompt: string,
+  userMessage: string,
+  history: { role: "user" | "assistant"; text: string }[] = [],
+  signal?: AbortSignal
+): Promise<string> {
+  const model = config.model || "llama-3.3-70b-versatile";
+  const url = "https://api.groq.com/openai/v1/chat/completions";
+  const isCompoundModel = model.startsWith("groq/compound");
+
+  // Format history
+  const formattedHistory = history.map(m => ({ role: m.role, content: m.text }));
+
+  let messages: any[];
+
+  if (isCompoundModel) {
+    // Compound models: Groq docs show only user messages, no system role.
+    // Merge any context into the first user message so compound can auto-search.
+    const contextPrefix = systemPrompt
+      ? `Context:\n${systemPrompt}\n\nUser question: `
+      : "";
+    messages = [
+      ...formattedHistory,
+      { role: "user", content: `${contextPrefix}${userMessage}` },
+    ];
+  } else {
+    // Non-compound models: standard system + user format
+    messages = [
+      { role: "system", content: systemPrompt },
+      ...formattedHistory,
+      { role: "user", content: userMessage },
+    ];
+  }
+
+  const body: any = {
+    model: model,
+    messages: messages,
+    temperature: 0.3,
+    max_tokens: 2048,
+  };
+
+  console.log(`[Groq] Calling model: ${model}, compound: ${isCompoundModel}, messages: ${messages.length}`);
+
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${config.apiKey}`,
+    },
+    body: JSON.stringify(body),
+    signal,
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    console.error(`[Groq] Error:`, err);
+    throw new Error(err?.error?.message || `Groq error ${res.status}`);
+  }
+
+  const data = await res.json();
+  // Log executed tools for compound models to verify search happened
+  if (isCompoundModel && data?.choices?.[0]?.message?.executed_tools) {
+    console.log("[Groq] Executed tools:", JSON.stringify(data.choices[0].message.executed_tools));
+  }
+  return data?.choices?.[0]?.message?.content ?? "";
+}
+
+async function callMistral(
+  config: MistralConfig,
+  systemPrompt: string,
+  userMessage: string,
+  history: { role: "user" | "assistant"; text: string }[] = [],
+  signal?: AbortSignal
+): Promise<string> {
+  const model = config.model || "mistral-medium-latest";
+  const url = "https://api.mistral.ai/v1/chat/completions";
+
+  let finalSystemPrompt = systemPrompt;
+  if (config.enableSearch) {
+    finalSystemPrompt += "\n\nUse web search tool to find relevant information if needed.";
+  }
+
+  const formattedHistory = history.map(m => ({ role: m.role, content: m.text }));
+
+  const body: any = {
+    model: model,
+    messages: [
+      { role: "system", content: finalSystemPrompt },
+      ...formattedHistory,
+      { role: "user", content: userMessage },
+    ],
+    temperature: 0.3,
+    max_tokens: 1024,
+  };
+
+  // Enable web search if configured (native support)
+  if (config.enableSearch) {
+    body.tools = [{ type: "web_search" }];
+  }
+
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${config.apiKey}`,
+    },
+    body: JSON.stringify(body),
+    signal,
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err?.error?.message || `Mistral error ${res.status}`);
+  }
+
+  const data = await res.json();
+  return data?.choices?.[0]?.message?.content ?? "";
+}
+
+async function callClaude(
+  config: ClaudeConfig,
+  systemPrompt: string,
+  userMessage: string,
+  history: { role: "user" | "assistant"; text: string }[] = [],
+  signal?: AbortSignal
+): Promise<string> {
+  const model = config.model || "claude-3-5-sonnet-20241022";
+  const url = "https://api.anthropic.com/v1/messages";
+
+  let finalSystemPrompt = systemPrompt;
+  if (config.enableSearch) {
+    finalSystemPrompt += "\n\nUse web search tool to find relevant information if needed.";
+  }
+
+  const formattedHistory = history.map(m => ({ role: m.role, content: m.text }));
+
+  const body: any = {
+    model: model,
+    system: finalSystemPrompt,
+    messages: [...formattedHistory, { role: "user", content: userMessage }],
+    temperature: 0.3,
+    max_tokens: 1024,
+  };
+
+  // Enable web search if configured (native support via web_search tool)
+  if (config.enableSearch) {
+    body.tools = [{
+      type: "web_search",
+      name: "web_search",
+      max_uses: 5
+    }];
+  }
+
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": config.apiKey,
+      "anthropic-version": "2023-06-01",
+    },
+    body: JSON.stringify(body),
+    signal,
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err?.error?.message || `Claude error ${res.status}`);
+  }
+
+  const data = await res.json();
+
+  // Extract text from content blocks (handles both text and tool results)
+  const content = data?.content || [];
+  const textBlocks = content
+    .filter((block: any) => block.type === "text")
+    .map((block: any) => block.text)
+    .join("\n");
+
+  return textBlocks || "";
+}
+
+async function callOpenAI(
+  config: OpenAIConfig,
+  systemPrompt: string,
+  userMessage: string,
+  history: { role: "user" | "assistant"; text: string }[] = [],
+  signal?: AbortSignal
+): Promise<string> {
+  const model = config.model || "gpt-4o-mini";
+  const url = "https://api.openai.com/v1/chat/completions";
+
+  let enhancedSystemPrompt = systemPrompt;
+  if (config.enableSearch) {
+    const searchResults = await searchBrave(userMessage);
+    enhancedSystemPrompt = `${systemPrompt}\n\nWeb Search Context:\n${searchResults}\n\nUse the above web search context to help answer the user's question accurately.`;
+  }
+
+  const formattedHistory = history.map(m => ({ role: m.role, content: m.text }));
+
+  const body = {
+    model: model,
+    messages: [
+      { role: "system", content: enhancedSystemPrompt },
+      ...formattedHistory,
+      { role: "user", content: userMessage },
+    ],
+    temperature: 0.3,
+    max_tokens: 1024,
+  };
+
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${config.apiKey}`,
+    },
+    body: JSON.stringify(body),
+    signal,
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err?.error?.message || `OpenAI error ${res.status}`);
+  }
+
+  const data = await res.json();
+  return data?.choices?.[0]?.message?.content ?? "";
+}
+
 async function callOpenAICompat(
   config: OpenAICompatConfig,
   systemPrompt: string,
   userMessage: string,
+  history: { role: "user" | "assistant"; text: string }[] = [],
   signal?: AbortSignal
 ): Promise<string> {
-  const base = config.baseUrl.replace(/\/$/, "");
-  const url = `${base}/v1/chat/completions`;
+  const url = config.baseUrl.replace(/\/$/, "");
+
+  let enhancedSystemPrompt = systemPrompt;
+  if (config.enableSearch) {
+    const searchResults = await searchBrave(userMessage, config.braveSearchApiKey);
+    enhancedSystemPrompt = `${systemPrompt}\n\nWeb Search Context:\n${searchResults}\n\nUse the above web search context to help answer the user's question accurately.`;
+  }
+
+  const formattedHistory = history.map(m => ({ role: m.role, content: m.text }));
 
   const body = {
     model: config.modelId,
     messages: [
-      { role: "system", content: systemPrompt },
+      { role: "system", content: enhancedSystemPrompt },
+      ...formattedHistory,
       { role: "user", content: userMessage },
     ],
     temperature: 0.3,
@@ -294,14 +743,7 @@ URL: ${item.url || ""}
 Description: ${item.description || ""}
 Notes: ${item.content?.slice(0, 3000) || ""}`;
 
-  const conversationContext =
-    history.length > 0
-      ? history.map((m) => `${m.role === "user" ? "User" : "Assistant"}: ${m.text}`).join("\n") + "\n"
-      : "";
-
-  const user = `${conversationContext}User: ${question}`;
-
-  return callAI(config, system, user, signal);
+  return callAI(config, system, question, history, signal);
 }
 
 /** Chat with the entire knowledge base */
@@ -312,21 +754,19 @@ export async function chatWithKnowledgeBase(
   question: string,
   signal?: AbortSignal
 ): Promise<string> {
-  // Build a comprehensive context from all non-deleted items
-  // Include full content for better knowledge
   const context = items
-    .slice(0, 50) // Limit to 50 items to avoid token limits
+    .slice(0, 50)
     .map((it, i) => {
       const parts = [
         `[${i + 1}] ${it.type.toUpperCase()}: ${it.title}`,
         it.description ? `Description: ${it.description}` : '',
-        it.content ? `Content: ${it.content.slice(0, 500)}` : '', // Include first 500 chars of content
+        it.content ? `Content: ${it.content.slice(0, 500)}` : '',
         it.tags.length ? `Tags: ${it.tags.join(", ")}` : ''
       ].filter(Boolean);
       return parts.join('\n');
     })
     .join('\n\n')
-    .slice(0, 8000); // Limit total context to ~8000 chars
+    .slice(0, 8000);
 
   const system = `You are a helpful AI assistant with access to the user's personal knowledge base.
 Answer questions based on the items listed below. Reference item titles when relevant.
@@ -335,14 +775,7 @@ Be concise, specific, and helpful. If nothing is relevant, say so.
 KNOWLEDGE BASE (${items.length} items):
 ${context}`;
 
-  const conversationContext =
-    history.length > 0
-      ? history.map((m) => `${m.role === "user" ? "User" : "Assistant"}: ${m.text}`).join("\n") + "\n"
-      : "";
-
-  const user = `${conversationContext}User: ${question}`;
-
-  return callAI(config, system, user, signal);
+  return callAI(config, system, question, history, signal);
 }
 
 /** Smart semantic search — returns IDs ranked by relevance */

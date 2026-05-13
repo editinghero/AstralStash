@@ -18,8 +18,10 @@ export function AIProvider({ children }: { children: ReactNode }) {
 
   const refreshConfig = useCallback(async () => {
     setLoading(true);
+    console.log('Refreshing AI config...');
     try {
       const loadedConfig = await loadAIConfig();
+      console.log('AI config loaded:', loadedConfig ? 'found' : 'not found');
       setConfig(loadedConfig);
     } catch (error) {
       console.error('Failed to load AI config:', error);

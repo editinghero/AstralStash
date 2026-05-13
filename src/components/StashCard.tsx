@@ -50,7 +50,12 @@ export const StashCard = ({ item, onDelete, onPin, onRestore, onPurge, onEdit, o
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.96 }}
       transition={{ duration: 0.35, delay: Math.min(index * 0.03, 0.3), ease: [0.22, 1, 0.36, 1] }}
-      className="group relative break-inside-avoid"
+      className="group relative break-inside-avoid cursor-grab active:cursor-grabbing"
+      draggable
+      onDragStart={(e) => {
+        e.dataTransfer.setData("application/stash-item-id", item.id);
+        e.dataTransfer.effectAllowed = "copyMove";
+      }}
     >
       {item.pinned && !trash && (
         <div className="absolute -top-2 -right-2 z-10 w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-pink">
@@ -156,11 +161,11 @@ export const StashCard = ({ item, onDelete, onPin, onRestore, onPurge, onEdit, o
               <span className="text-[11px] text-muted-foreground mr-1">{formatDate(item.createdAt)}</span>
               {trash ? (
                 <>
-                  <Button size="icon" variant="ghost" onClick={() => onRestore?.(item.id)} className="h-8 w-8 hover:text-primary" aria-label="Restore">
-                    <RotateCcw className="w-3.5 h-3.5" />
+                  <Button size="icon" variant="ghost" onClick={() => onRestore?.(item.id)} className="h-10 w-10 md:h-8 md:w-8 hover:text-primary" aria-label="Restore">
+                    <RotateCcw className="w-4 h-4 md:w-3.5 md:h-3.5" />
                   </Button>
-                  <Button size="icon" variant="ghost" onClick={() => onPurge?.(item.id)} className="h-8 w-8 hover:text-destructive" aria-label="Delete forever">
-                    <Trash2 className="w-3.5 h-3.5" />
+                  <Button size="icon" variant="ghost" onClick={() => onPurge?.(item.id)} className="h-10 w-10 md:h-8 md:w-8 hover:text-destructive" aria-label="Delete forever">
+                    <Trash2 className="w-4 h-4 md:w-3.5 md:h-3.5" />
                   </Button>
                 </>
               ) : (
@@ -170,10 +175,10 @@ export const StashCard = ({ item, onDelete, onPin, onRestore, onPurge, onEdit, o
                       size="icon"
                       variant="ghost"
                       onClick={() => onPin(item.id)}
-                      className={`h-8 w-8 transition-opacity ${item.pinned ? "text-primary" : "opacity-0 group-hover:opacity-100"}`}
+                      className={`h-10 w-10 md:h-8 md:w-8 transition-opacity ${item.pinned ? "text-primary" : "opacity-100 md:opacity-0 md:group-hover:opacity-100"}`}
                       aria-label={item.pinned ? "Unpin" : "Pin"}
                     >
-                      <Pin className={`w-3.5 h-3.5 ${item.pinned ? "fill-current" : ""}`} />
+                      <Pin className={`w-4 h-4 md:w-3.5 md:h-3.5 ${item.pinned ? "fill-current" : ""}`} />
                     </Button>
                   )}
                   {(isNote || isIdea) && onEnlarge && (
@@ -181,9 +186,9 @@ export const StashCard = ({ item, onDelete, onPin, onRestore, onPurge, onEdit, o
                       size="icon" 
                       variant="ghost" 
                       onClick={() => onEnlarge(item)}
-                      className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity hover:text-primary" 
+                      className="h-10 w-10 md:h-8 md:w-8 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity hover:text-primary" 
                       aria-label="Enlarge">
-                      <Maximize2 className="w-3.5 h-3.5" />
+                      <Maximize2 className="w-4 h-4 md:w-3.5 md:h-3.5" />
                     </Button>
                   )}
                   {onChat && (
@@ -191,21 +196,21 @@ export const StashCard = ({ item, onDelete, onPin, onRestore, onPurge, onEdit, o
                       size="icon" 
                       variant="ghost" 
                       onClick={() => onChat(item)}
-                      className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity hover:text-primary" 
+                      className="h-10 w-10 md:h-8 md:w-8 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity hover:text-primary" 
                       aria-label="Ask AI">
-                      <Sparkles className="w-3.5 h-3.5 text-primary" />
+                      <Sparkles className="w-4 h-4 md:w-3.5 md:h-3.5 text-primary" />
                     </Button>
                   )}
                   {onEdit && (
                     <Button size="icon" variant="ghost" onClick={() => onEdit(item)}
-                      className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity hover:text-primary" aria-label="Edit">
-                      <Pencil className="w-3.5 h-3.5" />
+                      className="h-10 w-10 md:h-8 md:w-8 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity hover:text-primary" aria-label="Edit">
+                      <Pencil className="w-4 h-4 md:w-3.5 md:h-3.5" />
                     </Button>
                   )}
                   {isLink && item.url && (
-                    <Button asChild size="icon" variant="ghost" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Button asChild size="icon" variant="ghost" className="h-10 w-10 md:h-8 md:w-8 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                       <a href={item.url} target="_blank" rel="noreferrer" aria-label="Open">
-                        <ExternalLink className="w-3.5 h-3.5" />
+                        <ExternalLink className="w-4 h-4 md:w-3.5 md:h-3.5" />
                       </a>
                     </Button>
                   )}
@@ -213,10 +218,10 @@ export const StashCard = ({ item, onDelete, onPin, onRestore, onPurge, onEdit, o
                     size="icon"
                     variant="ghost"
                     onClick={() => onDelete(item.id)}
-                    className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity hover:text-destructive"
+                    className="h-10 w-10 md:h-8 md:w-8 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity hover:text-destructive"
                     aria-label="Delete"
                   >
-                    <Trash2 className="w-3.5 h-3.5" />
+                    <Trash2 className="w-4 h-4 md:w-3.5 md:h-3.5" />
                   </Button>
                 </>
               )}

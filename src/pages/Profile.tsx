@@ -273,7 +273,7 @@ export default function Profile() {
             </div>
             <p className="text-sm text-muted-foreground mb-4">
               Connect an AI provider to unlock auto-tagging, summaries, smart search, and chat with your knowledge base.
-              Your API key is stored only in this browser.
+              Your API key is encrypted and stored securely in the database.
             </p>
             {isConfigured && config && (
               <p className="text-xs text-muted-foreground font-mono mb-4 p-3 bg-muted/50 rounded-xl">
