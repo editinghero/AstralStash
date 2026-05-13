@@ -72,7 +72,7 @@ export function AIChatDialog(props: Props) {
 
   return (
     <Dialog open={props.open} onOpenChange={props.onOpenChange}>
-      <DialogContent className="rounded-2xl sm:max-w-lg flex flex-col max-h-[80vh]">
+      <DialogContent className="rounded-2xl sm:max-w-lg flex flex-col max-h-[80vh] w-[95vw] sm:w-full p-4 sm:p-6">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 font-display text-xl text-secondary truncate">
             <Sparkles className="w-5 h-5 text-primary shrink-0" />
