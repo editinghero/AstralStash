@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useCallback, ReactNode, useEffect } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 import { AIConfig, loadAIConfig, saveAIConfig, clearAIConfig } from "@/lib/ai";
 
 interface AIContextValue {
@@ -15,6 +16,7 @@ const AIContext = createContext<AIContextValue | null>(null);
 export function AIProvider({ children }: { children: ReactNode }) {
   const [config, setConfig] = useState<AIConfig | null>(null);
   const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
 
   const refreshConfig = useCallback(async () => {
     setLoading(true);
@@ -33,7 +35,7 @@ export function AIProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     refreshConfig();
-  }, [refreshConfig]);
+  }, [refreshConfig, user]);
 
   const updateConfig = useCallback(async (c: AIConfig) => {
     await saveAIConfig(c);

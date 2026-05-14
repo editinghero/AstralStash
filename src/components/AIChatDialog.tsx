@@ -139,7 +139,7 @@ function MarkdownMessage({ text }: { text: string }) {
 }
 
 export function AIChatDialog(props: Props) {
-  const { config, isConfigured } = useAI();
+  const { config, isConfigured, updateConfig } = useAI();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -194,9 +194,14 @@ export function AIChatDialog(props: Props) {
         setMessages([]);
       }
       setInput("");
+    }
+  }, [props.open, chatKey]);
+
+  useEffect(() => {
+    if (props.open) {
       setEnableSearch(config?.enableSearch ?? false);
     }
-  }, [props.open, config, chatKey]);
+  }, [props.open, config?.enableSearch]);
 
   useEffect(() => {
     if (props.open && messages.length > 0) {
@@ -312,7 +317,12 @@ export function AIChatDialog(props: Props) {
             <Switch
               id="chat-search"
               checked={enableSearch}
-              onCheckedChange={setEnableSearch}
+              onCheckedChange={async (checked) => {
+                setEnableSearch(checked);
+                if (config) {
+                  await updateConfig({ ...config, enableSearch: checked });
+                }
+              }}
               disabled={loading}
             />
           </div>
