@@ -145,7 +145,7 @@ export const StashCard = ({ item, onDelete, onPin, onRestore, onPurge, onEdit, o
             </div>
           )}
 
-          <div className="mt-4 flex items-end justify-between gap-2">
+          <div className="mt-4 flex flex-wrap items-end justify-between gap-x-2 gap-y-3">
             <div className="flex flex-wrap gap-1.5 min-w-0">
               {item.tags.map((t) => (
                 <span
@@ -157,8 +157,8 @@ export const StashCard = ({ item, onDelete, onPin, onRestore, onPurge, onEdit, o
                 </span>
               ))}
             </div>
-            <div className="flex items-center gap-0.5 shrink-0">
-              <span className="text-[11px] text-muted-foreground mr-1">{formatDate(item.createdAt)}</span>
+            <div className="flex flex-wrap items-center justify-end gap-0.5 -mr-2 sm:mr-0 ml-auto">
+              <span className="text-[11px] text-muted-foreground mr-1 shrink-0">{formatDate(item.createdAt)}</span>
               {trash ? (
                 <>
                   <Button size="icon" variant="ghost" onClick={() => onRestore?.(item.id)} className="h-10 w-10 md:h-8 md:w-8 hover:text-primary" aria-label="Restore">
