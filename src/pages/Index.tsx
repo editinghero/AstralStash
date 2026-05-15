@@ -150,7 +150,7 @@ const Index = () => {
           >
             Save every good thing<br className="hidden sm:block" />
             you find online{" "}
-            <span className="text-primary italic">in one beautiful place.</span>
+            <span className="italic bg-gradient-to-r from-[#ff8a65] via-[#ec4899] to-[#a855f7] bg-[length:200%_auto] text-transparent bg-clip-text animate-text-gradient">in one beautiful place.</span>
           </h1>
 
           <p
