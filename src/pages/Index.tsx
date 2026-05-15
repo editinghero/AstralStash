@@ -1,12 +1,15 @@
 import { Link } from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { useState, useEffect } from "react";
 import {
   ArrowRight, Link2, FileText, Tag, Search, Moon, Pin, Download, Sparkles, Star, Github, Lightbulb, Clipboard, Plus,
 } from "lucide-react";
+import gsap from "gsap";
+import { useGSAP } from "@gsap/react";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/Logo";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { ParallaxBackground } from "@/components/ParallaxBackground";
 import { useAuth } from "@/contexts/AuthContext";
 
 const features = [
@@ -26,6 +29,56 @@ const Index = () => {
   const { user } = useAuth();
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [showInstall, setShowInstall] = useState(false);
+
+  const heroContainerRef = useRef<HTMLDivElement>(null);
+  const heroBadgeRef = useRef<HTMLDivElement>(null);
+  const heroTitleRef = useRef<HTMLHeadingElement>(null);
+  const heroDescRef = useRef<HTMLParagraphElement>(null);
+  const heroButtonsRef = useRef<HTMLDivElement>(null);
+
+  useGSAP(() => {
+    const tl = gsap.timeline();
+
+    // Initial state: blur and opacity 0
+    gsap.set([heroBadgeRef.current, heroTitleRef.current, heroDescRef.current, heroButtonsRef.current], {
+      opacity: 0,
+      filter: "blur(10px)",
+      y: 20,
+    });
+
+    // Animate badge
+    tl.to(heroBadgeRef.current, {
+      opacity: 1,
+      filter: "blur(0px)",
+      y: 0,
+      duration: 0.8,
+      ease: "power2.out",
+    })
+    // Animate title
+    .to(heroTitleRef.current, {
+      opacity: 1,
+      filter: "blur(0px)",
+      y: 0,
+      duration: 1,
+      ease: "power3.out",
+    }, "-=0.4")
+    // Animate description
+    .to(heroDescRef.current, {
+      opacity: 1,
+      filter: "blur(0px)",
+      y: 0,
+      duration: 0.8,
+      ease: "power2.out",
+    }, "-=0.6")
+    // Animate buttons
+    .to(heroButtonsRef.current, {
+      opacity: 1,
+      filter: "blur(0px)",
+      y: 0,
+      duration: 0.8,
+      ease: "power2.out",
+    }, "-=0.6");
+  }, { scope: heroContainerRef });
 
   useEffect(() => {
     const handler = (e: Event) => {
@@ -79,35 +132,37 @@ const Index = () => {
       </header>
 
       {/* Hero */}
-      <section className="relative overflow-hidden">
-        <div className="container pt-10 pb-16 sm:pt-14 sm:pb-20 md:pt-20 md:pb-28 text-center px-4 sm:px-6">
-          <motion.div
-            initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}
+      <section className="relative overflow-hidden" ref={heroContainerRef}>
+        <ParallaxBackground />
+
+        <div className="container relative z-10 pt-10 pb-16 sm:pt-14 sm:pb-20 md:pt-20 md:pb-28 text-center px-4 sm:px-6">
+          <div
+            ref={heroBadgeRef}
             className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 rounded-full bg-accent text-accent-foreground text-xs font-medium mb-6 sm:mb-8"
           >
             <Sparkles className="w-3.5 h-3.5 text-primary" />
             ✦ A nicer home for the things you love
-          </motion.div>
+          </div>
 
-          <motion.h1
-            initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.05 }}
+          <h1
+            ref={heroTitleRef}
             className="font-display text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-[5.5rem] font-semibold text-secondary leading-[1.1] sm:leading-[1.05] text-balance max-w-5xl mx-auto px-4"
           >
             Save every good thing<br className="hidden sm:block" />
             you find online{" "}
             <span className="text-primary italic">in one beautiful place.</span>
-          </motion.h1>
+          </h1>
 
-          <motion.p
-            initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.15 }}
+          <p
+            ref={heroDescRef}
             className="mt-6 sm:mt-8 text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed px-4"
           >
             From research to inspiration — links, notes, ideas and more. <br className="hidden sm:block" />
             All yours. Secure, private, and beautifully organized.
-          </motion.p>
+          </p>
 
-          <motion.div
-            initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.25 }}
+          <div
+            ref={heroButtonsRef}
             className="mt-8 sm:mt-10 flex flex-col sm:flex-row items-center justify-center gap-3 px-4"
           >
             <Button asChild size="lg" className="w-full sm:w-auto rounded-full gradient-primary text-primary-foreground shadow-pink hover:opacity-95 px-6 sm:px-8 h-12 sm:h-14 text-base">
@@ -115,12 +170,12 @@ const Index = () => {
                 {user ? "Open App" : "Start Saving Free"} <ArrowRight className="w-4 h-4 ml-2" />
               </Link>
             </Button>
-            <Button asChild size="lg" variant="outline" className="w-full sm:w-auto rounded-full px-6 sm:px-8 h-12 sm:h-14 text-base border-secondary/20 hover:bg-secondary hover:text-secondary-foreground">
+            <Button asChild size="lg" variant="outline" className="w-full sm:w-auto rounded-full px-6 sm:px-8 h-12 sm:h-14 text-base border-secondary/20 hover:bg-secondary hover:text-secondary-foreground bg-background/50 backdrop-blur-sm">
               <a href="#how">See how it works</a>
             </Button>
-          </motion.div>
+          </div>
 
-          <p className="mt-4 sm:mt-6 text-xs sm:text-sm text-muted-foreground flex items-center justify-center gap-1.5 flex-wrap px-4">
+          <p className="mt-4 sm:mt-6 text-xs sm:text-sm text-muted-foreground flex items-center justify-center gap-1.5 flex-wrap px-4 relative z-10">
             <kbd className="px-2 py-0.5 rounded-md border bg-card text-secondary text-xs font-mono">Ctrl</kbd>
             +
             <kbd className="px-2 py-0.5 rounded-md border bg-card text-secondary text-xs font-mono">V</kbd>

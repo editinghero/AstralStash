@@ -18,7 +18,7 @@ const updateThemeColor = () => {
   meta.setAttribute("content", color);
   
   // Also update apple-mobile-web-app-status-bar-style
-  let appleMeta = document.querySelector<HTMLMetaElement>('meta[name="apple-mobile-web-app-status-bar-style"]');
+  const appleMeta = document.querySelector<HTMLMetaElement>('meta[name="apple-mobile-web-app-status-bar-style"]');
   if (appleMeta) {
     appleMeta.setAttribute("content", isDark ? "black-translucent" : "default");
   }
