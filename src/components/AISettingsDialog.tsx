@@ -124,6 +124,7 @@ export function AISettingsDialog({
   );
   const [enableSearch, setEnableSearch] = useState(config?.enableSearch ?? false);
   const [braveSearchApiKey, setBraveSearchApiKey] = useState("");
+  const [autoProcessing, setAutoProcessing] = useState(config?.autoProcessing ?? false);
 
   const [testing, setTesting] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -172,6 +173,7 @@ export function AISettingsDialog({
           setModel(savedConfig.modelId || "");
         }
         setEnableSearch(savedConfig.enableSearch || false);
+        setAutoProcessing(savedConfig.autoProcessing || false);
         return; // Skip setting defaults if we have a saved config
       }
     } catch (e) {
@@ -208,15 +210,15 @@ export function AISettingsDialog({
 
     switch (providerType) {
       case "gemini":
-        return { type: "gemini", apiKey: trimmedKey, model: finalModel, enableSearch };
+        return { type: "gemini", apiKey: trimmedKey, model: finalModel, enableSearch, autoProcessing };
       case "groq":
-        return { type: "groq", apiKey: trimmedKey, model: finalModel, enableSearch };
+        return { type: "groq", apiKey: trimmedKey, model: finalModel, enableSearch, autoProcessing };
       case "mistral":
-        return { type: "mistral", apiKey: trimmedKey, model: finalModel, enableSearch };
+        return { type: "mistral", apiKey: trimmedKey, model: finalModel, enableSearch, autoProcessing };
       case "claude":
-        return { type: "claude", apiKey: trimmedKey, model: finalModel, enableSearch };
+        return { type: "claude", apiKey: trimmedKey, model: finalModel, enableSearch, autoProcessing };
       case "openai":
-        return { type: "openai", apiKey: trimmedKey, model: finalModel, enableSearch };
+        return { type: "openai", apiKey: trimmedKey, model: finalModel, enableSearch, autoProcessing };
       case "openai-compat":
         return { 
           type: "openai-compat", 
@@ -224,6 +226,7 @@ export function AISettingsDialog({
           apiKey: trimmedKey, 
           modelId: finalModel, 
           enableSearch,
+          autoProcessing,
           braveSearchApiKey: braveSearchApiKey.trim() || undefined,
         };
     }
@@ -486,6 +489,24 @@ export function AISettingsDialog({
                 id="enable-search"
                 checked={enableSearch}
                 onCheckedChange={setEnableSearch}
+              />
+            </div>
+
+
+            {/* Auto Processing Toggle */}
+            <div className="flex items-center justify-between p-3 rounded-xl border border-border/60">
+              <div className="space-y-0.5">
+                <Label htmlFor="auto-processing" className="text-sm font-medium cursor-pointer">
+                  Auto Processing
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  Automatically run AI processing features after actions. Disable to reduce API usage/credits.
+                </p>
+              </div>
+              <Switch
+                id="auto-processing"
+                checked={autoProcessing}
+                onCheckedChange={setAutoProcessing}
               />
             </div>
 

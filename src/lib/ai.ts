@@ -7,6 +7,7 @@ export interface GeminiConfig {
   apiKey: string;
   model: string;
   enableSearch?: boolean;
+  autoProcessing?: boolean;
   braveSearchApiKey?: string;
 }
 
@@ -15,6 +16,7 @@ export interface GroqConfig {
   apiKey: string;
   model: string; // default: "llama-3.3-70b-versatile"
   enableSearch?: boolean; // Enable web search (native on compound)
+  autoProcessing?: boolean;
   braveSearchApiKey?: string; // Optional Brave Search API key
 }
 
@@ -23,6 +25,7 @@ export interface MistralConfig {
   apiKey: string;
   model: string;
   enableSearch?: boolean;
+  autoProcessing?: boolean;
   braveSearchApiKey?: string;
 }
 
@@ -31,6 +34,7 @@ export interface ClaudeConfig {
   apiKey: string;
   model: string;
   enableSearch?: boolean;
+  autoProcessing?: boolean;
   braveSearchApiKey?: string;
 }
 
@@ -39,6 +43,7 @@ export interface OpenAIConfig {
   apiKey: string;
   model: string;
   enableSearch?: boolean;
+  autoProcessing?: boolean;
   braveSearchApiKey?: string;
 }
 
@@ -48,6 +53,7 @@ export interface OpenAICompatConfig {
   apiKey: string;
   modelId: string;
   enableSearch?: boolean; // Enable Brave Search fallback
+  autoProcessing?: boolean;
   braveSearchApiKey?: string; // Optional Brave Search API key
 }
 
@@ -107,6 +113,7 @@ export async function loadAIConfig(provider?: AIProviderType): Promise<AIConfig 
           apiKey: keyData.api_key,
           model: keyData.model_id,
           enableSearch: keyData.enable_search,
+          autoProcessing: keyData.auto_processing,
         };
       case 'groq':
         return {
@@ -114,6 +121,7 @@ export async function loadAIConfig(provider?: AIProviderType): Promise<AIConfig 
           apiKey: keyData.api_key,
           model: keyData.model_id,
           enableSearch: keyData.enable_search,
+          autoProcessing: keyData.auto_processing,
           braveSearchApiKey: keyData.brave_search_api_key,
         };
       case 'mistral':
@@ -122,6 +130,7 @@ export async function loadAIConfig(provider?: AIProviderType): Promise<AIConfig 
           apiKey: keyData.api_key,
           model: keyData.model_id,
           enableSearch: keyData.enable_search,
+          autoProcessing: keyData.auto_processing,
         };
       case 'claude':
         return {
@@ -129,6 +138,7 @@ export async function loadAIConfig(provider?: AIProviderType): Promise<AIConfig 
           apiKey: keyData.api_key,
           model: keyData.model_id,
           enableSearch: keyData.enable_search,
+          autoProcessing: keyData.auto_processing,
         };
       case 'openai':
         return {
@@ -136,6 +146,7 @@ export async function loadAIConfig(provider?: AIProviderType): Promise<AIConfig 
           apiKey: keyData.api_key,
           model: keyData.model_id,
           enableSearch: keyData.enable_search,
+          autoProcessing: keyData.auto_processing,
         };
       case 'openai-compat':
         return {
@@ -144,6 +155,7 @@ export async function loadAIConfig(provider?: AIProviderType): Promise<AIConfig 
           apiKey: keyData.api_key,
           modelId: keyData.model_id,
           enableSearch: keyData.enable_search,
+          autoProcessing: keyData.auto_processing,
           braveSearchApiKey: keyData.brave_search_api_key,
         };
       default:
@@ -172,6 +184,7 @@ export async function saveAIConfig(config: AIConfig): Promise<void> {
         api_key: config.apiKey,
         model_id: config.model,
         enable_search: config.enableSearch || false,
+        auto_processing: config.autoProcessing || false,
       };
       break;
     case 'groq':
@@ -180,6 +193,7 @@ export async function saveAIConfig(config: AIConfig): Promise<void> {
         api_key: config.apiKey,
         model_id: config.model,
         enable_search: config.enableSearch || false,
+        auto_processing: config.autoProcessing || false,
         brave_search_api_key: config.braveSearchApiKey || null,
       };
       break;
@@ -189,6 +203,7 @@ export async function saveAIConfig(config: AIConfig): Promise<void> {
         api_key: config.apiKey,
         model_id: config.model,
         enable_search: config.enableSearch || false,
+        auto_processing: config.autoProcessing || false,
       };
       break;
     case 'claude':
@@ -197,6 +212,7 @@ export async function saveAIConfig(config: AIConfig): Promise<void> {
         api_key: config.apiKey,
         model_id: config.model,
         enable_search: config.enableSearch || false,
+        auto_processing: config.autoProcessing || false,
       };
       break;
     case 'openai':
@@ -205,6 +221,7 @@ export async function saveAIConfig(config: AIConfig): Promise<void> {
         api_key: config.apiKey,
         model_id: config.model,
         enable_search: config.enableSearch || false,
+        auto_processing: config.autoProcessing || false,
       };
       break;
     case 'openai-compat':
@@ -214,6 +231,7 @@ export async function saveAIConfig(config: AIConfig): Promise<void> {
         model_id: config.modelId,
         base_url: config.baseUrl,
         enable_search: config.enableSearch || false,
+        auto_processing: config.autoProcessing || false,
         brave_search_api_key: config.braveSearchApiKey || null,
       };
       break;

@@ -98,6 +98,7 @@ CREATE TABLE IF NOT EXISTS ai_configs (
   model_id TEXT, -- Optional for brave-search
   base_url TEXT, -- For OpenAI-compatible providers
   enable_search INTEGER DEFAULT 0, -- Enable web search (0 = false, 1 = true)
+  auto_processing INTEGER DEFAULT 0, -- Enable automatic AI processing (0 = false, 1 = true)
   created_at INTEGER NOT NULL,
   updated_at INTEGER NOT NULL,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,

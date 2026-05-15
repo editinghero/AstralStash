@@ -25,11 +25,11 @@ ai.get('/', async (c) => {
     
     if (provider) {
       config = await c.env.DB.prepare(
-        'SELECT id, user_id, provider_type, model_id, base_url, created_at, updated_at FROM ai_configs WHERE user_id = ? AND provider_type = ?'
+        'SELECT id, user_id, provider_type, model_id, base_url, enable_search, auto_processing, created_at, updated_at FROM ai_configs WHERE user_id = ? AND provider_type = ?'
       ).bind(userId, provider).first();
     } else {
       config = await c.env.DB.prepare(
-        'SELECT id, user_id, provider_type, model_id, base_url, created_at, updated_at FROM ai_configs WHERE user_id = ? AND provider_type != ? ORDER BY updated_at DESC LIMIT 1'
+        'SELECT id, user_id, provider_type, model_id, base_url, enable_search, auto_processing, created_at, updated_at FROM ai_configs WHERE user_id = ? AND provider_type != ? ORDER BY updated_at DESC LIMIT 1'
       ).bind(userId, 'brave-search').first();
     }
 
@@ -42,6 +42,8 @@ ai.get('/', async (c) => {
       model_id: config.model_id as string,
       base_url: config.base_url as string | undefined,
       has_api_key: true,
+      enable_search: Boolean(config.enable_search),
+      auto_processing: Boolean(config.auto_processing),
     };
 
     return c.json({ configured: true, config: response }, 200);
@@ -66,7 +68,7 @@ ai.post('/', async (c) => {
     const body: AIConfigRequest = await c.req.json();
     console.log('Request body:', { ...body, api_key: '***', brave_search_api_key: body.brave_search_api_key ? '***' : undefined });
     
-    const { provider_type, api_key, model_id, base_url, brave_search_api_key } = body;
+    const { provider_type, api_key, model_id, base_url, brave_search_api_key, enable_search, auto_processing } = body;
 
     if (!provider_type || !api_key || !model_id) {
       console.log('Missing required fields');
@@ -102,16 +104,16 @@ ai.post('/', async (c) => {
       console.log('Updating existing config...');
       // Update existing config
       await c.env.DB.prepare(
-        'UPDATE ai_configs SET encrypted_api_key = ?, model_id = ?, base_url = ?, enable_search = ?, updated_at = ? WHERE user_id = ? AND provider_type = ?'
-      ).bind(encryptedKey, model_id, base_url || null, body.enable_search || false, now, userId, provider_type).run();
+        'UPDATE ai_configs SET encrypted_api_key = ?, model_id = ?, base_url = ?, enable_search = ?, auto_processing = ?, updated_at = ? WHERE user_id = ? AND provider_type = ?'
+      ).bind(encryptedKey, model_id, base_url || null, enable_search || false, auto_processing || false, now, userId, provider_type).run();
       console.log('Config updated');
     } else {
       console.log('Creating new config...');
       // Create new config
       const id = crypto.randomUUID();
       await c.env.DB.prepare(
-        'INSERT INTO ai_configs (id, user_id, provider_type, encrypted_api_key, model_id, base_url, enable_search, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
-      ).bind(id, userId, provider_type, encryptedKey, model_id, base_url || null, body.enable_search || false, now, now).run();
+        'INSERT INTO ai_configs (id, user_id, provider_type, encrypted_api_key, model_id, base_url, enable_search, auto_processing, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+      ).bind(id, userId, provider_type, encryptedKey, model_id, base_url || null, enable_search || false, auto_processing || false, now, now).run();
       console.log('Config created');
     }
 
@@ -120,6 +122,8 @@ ai.post('/', async (c) => {
       model_id,
       base_url,
       has_api_key: true,
+      enable_search: Boolean(enable_search),
+      auto_processing: Boolean(auto_processing),
     };
 
     console.log('Returning success response');
@@ -164,11 +168,11 @@ ai.get('/key', async (c) => {
     let config;
     if (provider) {
       config = await c.env.DB.prepare(
-        'SELECT encrypted_api_key, provider_type, model_id, base_url, enable_search FROM ai_configs WHERE user_id = ? AND provider_type = ?'
+        'SELECT encrypted_api_key, provider_type, model_id, base_url, enable_search, auto_processing FROM ai_configs WHERE user_id = ? AND provider_type = ?'
       ).bind(userId, provider).first();
     } else {
       config = await c.env.DB.prepare(
-        'SELECT encrypted_api_key, provider_type, model_id, base_url, enable_search FROM ai_configs WHERE user_id = ? AND provider_type != ? ORDER BY updated_at DESC LIMIT 1'
+        'SELECT encrypted_api_key, provider_type, model_id, base_url, enable_search, auto_processing FROM ai_configs WHERE user_id = ? AND provider_type != ? ORDER BY updated_at DESC LIMIT 1'
       ).bind(userId, 'brave-search').first();
     }
 
@@ -195,6 +199,7 @@ ai.get('/key', async (c) => {
       model_id: config.model_id,
       base_url: config.base_url,
       enable_search: config.enable_search,
+      auto_processing: config.auto_processing,
       brave_search_api_key: braveSearchApiKey,
     }, 200);
   } catch (error: any) {

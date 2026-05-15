@@ -57,6 +57,8 @@ export interface AIConfig {
   encrypted_api_key: string;
   model_id: string;
   base_url?: string;
+  enable_search?: number;
+  auto_processing?: number;
   created_at: number;
   updated_at: number;
 }
@@ -66,6 +68,8 @@ export interface AIConfigRequest {
   api_key: string; // Plain text, will be encrypted server-side
   model_id: string;
   base_url?: string;
+  enable_search?: boolean;
+  auto_processing?: boolean;
 }
 
 export interface AIConfigResponse {
@@ -73,5 +77,7 @@ export interface AIConfigResponse {
   model_id: string;
   base_url?: string;
   has_api_key: boolean; // Don't send the actual key back
+  enable_search?: boolean;
+  auto_processing?: boolean;
 }
 
