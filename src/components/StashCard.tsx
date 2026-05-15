@@ -65,7 +65,7 @@ export const StashCard = ({ item, onDelete, onPin, onRestore, onPurge, onEdit, o
 
       <article
         style={cardStyle}
-        className={`${cardClass} rounded-3xl overflow-hidden shadow-card hover-lift transition-transform`}
+        className={`${cardClass} w-full min-w-0 rounded-3xl overflow-hidden shadow-card hover-lift transition-transform`}
       >
         {isLink && (
           <a href={item.url} target="_blank" rel="noreferrer" className="block">
@@ -138,14 +138,14 @@ export const StashCard = ({ item, onDelete, onPin, onRestore, onPurge, onEdit, o
               style={{ color: `${pastelInk}cc` }}
             >
               {isNote && item.format === "txt" ? (
-                <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed">{item.content}</pre>
+                <pre className="whitespace-pre-wrap break-words font-sans text-sm leading-relaxed overflow-x-auto">{item.content}</pre>
               ) : (
                 <ReactMarkdown rehypePlugins={[rehypeRaw]}>{item.content}</ReactMarkdown>
               )}
             </div>
           )}
 
-          <div className="mt-4 flex items-end justify-between gap-2">
+          <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div className="flex flex-wrap gap-1.5 min-w-0">
               {item.tags.map((t) => (
                 <span
@@ -157,7 +157,7 @@ export const StashCard = ({ item, onDelete, onPin, onRestore, onPurge, onEdit, o
                 </span>
               ))}
             </div>
-            <div className="flex items-center gap-0.5 shrink-0">
+            <div className="flex flex-wrap items-center justify-end gap-0.5">
               <span className="text-[11px] text-muted-foreground mr-1">{formatDate(item.createdAt)}</span>
               {trash ? (
                 <>

@@ -625,7 +625,7 @@ const StashApp = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background transition-colors duration-300">
+    <div className="min-h-screen bg-background transition-colors duration-300 overflow-x-auto">
       <input ref={fileRef} type="file" accept="application/json" onChange={onFile} className="hidden" />
 
       <header className="sticky top-0 z-30 backdrop-blur-md bg-background/80 border-b border-border/60">
@@ -749,7 +749,7 @@ const StashApp = () => {
         </div>
       </header>
 
-      <div className="container py-8 grid lg:grid-cols-[280px_1fr] gap-8">
+      <div className="container py-8 grid lg:grid-cols-[280px_1fr] gap-8 min-w-0">
         <div className="hidden lg:block w-full max-w-[280px]">{sidebar}</div>
 
         <AnimatePresence>
@@ -777,7 +777,7 @@ const StashApp = () => {
           )}
         </AnimatePresence>
 
-        <main>
+        <main className="min-w-0">
           <motion.div
             key={`${filter}-${activeTag}-${activeCollection}`}
             initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
