@@ -65,7 +65,7 @@ export const StashCard = ({ item, onDelete, onPin, onRestore, onPurge, onEdit, o
 
       <article
         style={cardStyle}
-        className={`${cardClass} rounded-3xl overflow-hidden shadow-card hover-lift transition-transform`}
+        className={`${cardClass} w-full min-w-0 rounded-3xl overflow-hidden shadow-card hover-lift transition-transform`}
       >
         {isLink && (
           <a href={item.url} target="_blank" rel="noreferrer" className="block">
@@ -138,7 +138,7 @@ export const StashCard = ({ item, onDelete, onPin, onRestore, onPurge, onEdit, o
               style={{ color: `${pastelInk}cc` }}
             >
               {isNote && item.format === "txt" ? (
-                <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed">{item.content}</pre>
+                <pre className="whitespace-pre-wrap break-words font-sans text-sm leading-relaxed overflow-x-auto">{item.content}</pre>
               ) : (
                 <ReactMarkdown rehypePlugins={[rehypeRaw]}>{item.content}</ReactMarkdown>
               )}
