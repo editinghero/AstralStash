@@ -53,7 +53,7 @@ export interface Collection {
 export interface AIConfig {
   id: string;
   user_id: string;
-  provider_type: 'gemini' | 'openai-compat';
+  provider_type: 'gemini' | 'groq' | 'mistral' | 'claude' | 'openai' | 'openai-compat' | 'brave-search';
   encrypted_api_key: string;
   model_id: string;
   base_url?: string;
@@ -62,14 +62,14 @@ export interface AIConfig {
 }
 
 export interface AIConfigRequest {
-  provider_type: 'gemini' | 'openai-compat';
+  provider_type: 'gemini' | 'groq' | 'mistral' | 'claude' | 'openai' | 'openai-compat' | 'brave-search';
   api_key: string; // Plain text, will be encrypted server-side
   model_id: string;
   base_url?: string;
 }
 
 export interface AIConfigResponse {
-  provider_type: 'gemini' | 'openai-compat';
+  provider_type: 'gemini' | 'groq' | 'mistral' | 'claude' | 'openai' | 'openai-compat' | 'brave-search';
   model_id: string;
   base_url?: string;
   has_api_key: boolean; // Don't send the actual key back
