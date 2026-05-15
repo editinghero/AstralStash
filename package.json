@@ -21,6 +21,7 @@
     "db:backup": "wrangler d1 export astralstash --remote --output=./backup.sql"
   },
   "dependencies": {
+    "@gsap/react": "^2.1.2",
     "@hookform/resolvers": "^3.10.0",
     "@radix-ui/react-accordion": "^1.2.11",
     "@radix-ui/react-alert-dialog": "^1.1.14",
@@ -56,6 +57,7 @@
     "date-fns": "^3.6.0",
     "embla-carousel-react": "^8.6.0",
     "framer-motion": "^12.38.0",
+    "gsap": "^3.15.0",
     "hono": "^4.12.18",
     "input-otp": "^1.4.2",
     "lucide-react": "^0.462.0",

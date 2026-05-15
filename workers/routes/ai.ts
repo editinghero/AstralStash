@@ -38,7 +38,7 @@ ai.get('/', async (c) => {
     }
 
     const response: AIConfigResponse = {
-      provider_type: config.provider_type as 'gemini' | 'groq' | 'mistral' | 'claude' | 'openai' | 'openai-compat',
+      provider_type: config.provider_type as 'gemini' | 'groq' | 'mistral' | 'claude' | 'openai' | 'openai-compat' | 'brave-search',
       model_id: config.model_id as string,
       base_url: config.base_url as string | undefined,
       has_api_key: true,
