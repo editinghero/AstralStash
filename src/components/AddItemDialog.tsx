@@ -759,7 +759,7 @@ export const AddItemDialog = ({ open, onOpenChange, onAdd, onUpdate, initialUrl,
                     pre: ({ children }) => <>{children}</>,
                     // Style links
                     a: ({ href, children }) => (
-                      <a href={href} target="_blank" rel="noreferrer" className="text-primary underline underline-offset-2 hover:text-primary/80">
+                      <a href={href} target="_blank" rel="noreferrer" className="text-primary hover:text-primary/80 transition-colors">
                         {children}
                       </a>
                     ),

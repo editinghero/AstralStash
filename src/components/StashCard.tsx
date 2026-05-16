@@ -136,7 +136,7 @@ export const StashCard = ({ item, onDelete, onPin, onRestore, onPurge, onEdit, o
 
           {(isNote || isIdea) && item.content && (
             <div
-              className={`${isIdea ? "mt-2 text-base" : "mt-3 text-sm"} line-clamp-6 max-w-none break-words`}
+              className={`${isIdea ? "mt-2 text-base" : "mt-3 text-sm"} line-clamp-6 overflow-hidden max-w-none break-words`}
               style={{ color: `${pastelInk}cc` }}
             >
               {isNote && item.format === "txt" ? (
@@ -146,15 +146,15 @@ export const StashCard = ({ item, onDelete, onPin, onRestore, onPurge, onEdit, o
                   remarkPlugins={[remarkGfm, remarkBreaks]} 
                   rehypePlugins={[rehypeRaw]}
                   components={{
-                    h1: ({ children }) => <h1 className="text-lg font-bold mb-1.5 mt-2 first:mt-0 font-display">{children}</h1>,
-                    h2: ({ children }) => <h2 className="text-base font-bold mb-1.5 mt-2 first:mt-0 font-display">{children}</h2>,
-                    h3: ({ children }) => <h3 className="text-sm font-semibold mb-1 mt-1.5 first:mt-0 font-display">{children}</h3>,
-                    p: ({ children }) => <p className="my-1">{children}</p>,
-                    ul: ({ children }) => <ul className="list-disc pl-4 my-1 space-y-0.5">{children}</ul>,
-                    ol: ({ children }) => <ol className="list-decimal pl-4 my-1 space-y-0.5">{children}</ol>,
+                    h1: ({ children }) => <h1 className="text-lg font-bold mb-1.5 first:mt-0 font-display">{children}</h1>,
+                    h2: ({ children }) => <h2 className="text-base font-bold mb-1.5 first:mt-0 font-display">{children}</h2>,
+                    h3: ({ children }) => <h3 className="text-sm font-semibold mb-1 first:mt-0 font-display">{children}</h3>,
+                    p: ({ children }) => <p className="mb-1.5 last:mb-0">{children}</p>,
+                    ul: ({ children }) => <ul className="list-disc pl-4 mb-1.5 last:mb-0 space-y-0.5">{children}</ul>,
+                    ol: ({ children }) => <ol className="list-decimal pl-4 mb-1.5 last:mb-0 space-y-0.5">{children}</ol>,
                     li: ({ children }) => <li className="text-sm">{children}</li>,
                     code: ({ children, ...props }) => <code className="px-1 py-0.5 rounded bg-white/60 text-xs font-mono" {...props}>{children}</code>,
-                    a: ({ href, children }) => <a href={href} target="_blank" rel="noreferrer" className="text-primary underline">{children}</a>,
+                    a: ({ href, children }) => <a href={href} target="_blank" rel="noreferrer" className="font-medium hover:opacity-80 transition-opacity">{children}</a>,
                     strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
                     em: ({ children }) => <em className="italic">{children}</em>,
                     del: ({ children }) => <del className="line-through opacity-70">{children}</del>,
@@ -166,7 +166,7 @@ export const StashCard = ({ item, onDelete, onPin, onRestore, onPurge, onEdit, o
             </div>
           )}
 
-          <div className="mt-4 flex items-end justify-between gap-2">
+          <div className="mt-4 flex flex-wrap items-end justify-between gap-3">
             <div className="flex flex-wrap gap-1.5 min-w-0">
               {item.tags.map((t) => (
                 <span
@@ -178,7 +178,7 @@ export const StashCard = ({ item, onDelete, onPin, onRestore, onPurge, onEdit, o
                 </span>
               ))}
             </div>
-            <div className="flex items-center gap-0.5 shrink-0">
+            <div className="flex flex-wrap justify-end items-center gap-0.5 ml-auto">
               <span className="text-[11px] text-muted-foreground mr-1">{formatDate(item.createdAt)}</span>
               {trash ? (
                 <>

@@ -156,7 +156,7 @@ export const EnlargedViewDialog = ({ item, open, onOpenChange, onEdit, onPin, on
                       return <code className="px-1.5 py-0.5 rounded bg-white/60 text-sm font-mono" {...props}>{children}</code>;
                     },
                     pre: ({ children }) => <>{children}</>,
-                    a: ({ href, children }) => <a href={href} target="_blank" rel="noreferrer" className="text-primary underline underline-offset-2 hover:text-primary/80">{children}</a>,
+                    a: ({ href, children }) => <a href={href} target="_blank" rel="noreferrer" className="text-primary hover:text-primary/80 transition-colors">{children}</a>,
                     img: ({ src, alt }) => <img src={src} alt={alt} className="max-w-full h-auto rounded-lg border border-white/40 my-3" />,
                     blockquote: ({ children }) => <blockquote className="border-l-4 border-white/40 pl-4 my-3 italic opacity-80">{children}</blockquote>,
                     table: ({ children }) => (
