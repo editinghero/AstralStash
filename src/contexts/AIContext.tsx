@@ -18,13 +18,13 @@ export function AIProvider({ children }: { children: ReactNode }) {
 
   const refreshConfig = useCallback(async () => {
     setLoading(true);
-    console.log('Refreshing AI config...');
+    console.log('[AIContext] Refreshing AI config from database...');
     try {
       const loadedConfig = await loadAIConfig();
-      console.log('AI config loaded:', loadedConfig ? 'found' : 'not found');
+      console.log('[AIContext] AI config loaded:', loadedConfig ? `${loadedConfig.type} configured` : 'not found');
       setConfig(loadedConfig);
     } catch (error) {
-      console.error('Failed to load AI config:', error);
+      console.error('[AIContext] Failed to load AI config:', error);
       setConfig(null);
     } finally {
       setLoading(false);
@@ -34,6 +34,7 @@ export function AIProvider({ children }: { children: ReactNode }) {
   // Load config on mount and when auth token changes
   useEffect(() => {
     const token = localStorage.getItem('auth_token');
+    console.log('[AIContext] Mount effect - auth token:', token ? 'present' : 'missing');
     if (token) {
       refreshConfig();
     } else {
@@ -47,8 +48,10 @@ export function AIProvider({ children }: { children: ReactNode }) {
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'auth_token') {
         if (e.newValue) {
+          console.log('[AIContext] Auth token added in another tab, refreshing config');
           refreshConfig();
         } else {
+          console.log('[AIContext] Auth token removed in another tab, clearing config');
           setConfig(null);
         }
       }
@@ -58,13 +61,19 @@ export function AIProvider({ children }: { children: ReactNode }) {
   }, [refreshConfig]);
 
   const updateConfig = useCallback(async (c: AIConfig) => {
+    console.log('[AIContext] Updating config in database');
     await saveAIConfig(c);
+    // Immediately update local state (optimistic update)
     setConfig(c);
+    console.log('[AIContext] Config updated, cache cleared');
   }, []);
 
   const removeConfig = useCallback(async () => {
+    console.log('[AIContext] Removing config from database');
     await clearAIConfig();
+    // Immediately clear local state
     setConfig(null);
+    console.log('[AIContext] Config removed, cache cleared');
   }, []);
 
   return (

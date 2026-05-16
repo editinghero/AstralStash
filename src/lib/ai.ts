@@ -2,6 +2,38 @@
 
 export type AIProviderType = "gemini" | "groq" | "mistral" | "claude" | "openai" | "openai-compat";
 
+interface SaveConfigBody {
+  provider_type: string;
+  api_key: string;
+  model_id: string;
+  base_url?: string;
+  enable_search: boolean;
+  brave_search_api_key?: string | null;
+}
+
+interface GeminiRequestBody {
+  system_instruction: { parts: Array<{ text: string }> };
+  contents: Array<{ role: string; parts: Array<{ text: string }> }>;
+  generationConfig: { temperature: number; maxOutputTokens: number };
+  tools?: Array<{ googleSearch: Record<string, never> }>;
+}
+
+interface OpenAIRequestBody {
+  model: string;
+  messages: Array<{ role: string; content: string }>;
+  temperature: number;
+  max_tokens: number;
+}
+
+interface ClaudeRequestBody {
+  model: string;
+  system: string;
+  messages: Array<{ role: string; content: string }>;
+  temperature: number;
+  max_tokens: number;
+  tools?: Array<{ type: string; name: string; max_uses: number }>;
+}
+
 export interface GeminiConfig {
   type: "gemini";
   apiKey: string;
@@ -59,33 +91,16 @@ export async function loadAIConfig(provider?: AIProviderType): Promise<AIConfig 
   try {
     const token = localStorage.getItem('auth_token');
     if (!token) {
-      console.log('No auth token found');
+      console.log('[loadAIConfig] No auth token found');
       return null;
     }
 
-    // Use stored active provider if no specific provider requested
-    const activeProvider = provider || localStorage.getItem('active_ai_provider') as AIProviderType | null;
-    const query = activeProvider ? `?provider=${activeProvider}` : '';
+    // If specific provider requested, use it; otherwise backend returns most recent
+    const query = provider ? `?provider=${provider}` : '';
+    
+    console.log('[loadAIConfig] Loading config from database:', provider || 'most recent');
 
-    // First, get the config metadata
-    const response = await fetch(`${import.meta.env.VITE_API_URL || '/api'}/ai${query}`, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
-    });
-
-    if (!response.ok) {
-      console.error('Failed to fetch AI config:', response.status);
-      return null;
-    }
-
-    const data = await response.json();
-    if (!data.configured) {
-      console.log('AI not configured');
-      return null;
-    }
-
-    // Then fetch the decrypted API key
+    // Fetch the decrypted API key and full config from database
     const keyResponse = await fetch(`${import.meta.env.VITE_API_URL || '/api'}/ai/key${query}`, {
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -93,11 +108,16 @@ export async function loadAIConfig(provider?: AIProviderType): Promise<AIConfig 
     });
 
     if (!keyResponse.ok) {
-      console.error('Failed to fetch API key:', keyResponse.status);
+      if (keyResponse.status === 404) {
+        console.log('[loadAIConfig] No AI config found in database');
+        return null;
+      }
+      console.error('[loadAIConfig] Failed to fetch API key:', keyResponse.status, keyResponse.statusText);
       return null;
     }
 
     const keyData = await keyResponse.json();
+    console.log('[loadAIConfig] Config loaded from database for provider:', keyData.provider_type);
 
     // Map provider types to config objects
     switch (keyData.provider_type) {
@@ -160,10 +180,7 @@ export async function saveAIConfig(config: AIConfig): Promise<void> {
   const token = localStorage.getItem('auth_token');
   if (!token) throw new Error('Not authenticated');
 
-  // Store active provider in localStorage so we load the right one on reload
-  localStorage.setItem('active_ai_provider', config.type);
-
-  let body: any;
+  let body: SaveConfigBody;
 
   switch (config.type) {
     case 'gemini':
@@ -242,9 +259,9 @@ export async function saveAIConfig(config: AIConfig): Promise<void> {
   // Parse the success response
   try {
     const result = await response.json();
-    console.log('AI config saved successfully:', result);
+    console.log('[saveAIConfig] AI config saved successfully to database:', result);
   } catch (e) {
-    console.error('Failed to parse success response:', e);
+    console.error('[saveAIConfig] Failed to parse success response:', e);
     // Don't throw - the save was successful even if we can't parse the response
   }
 }
@@ -259,6 +276,8 @@ export async function clearAIConfig(): Promise<void> {
       'Authorization': `Bearer ${token}`,
     },
   });
+
+  console.log('[clearAIConfig] AI config cleared from database');
 }
 
 // ─── Core call ────────────────────────────────────────────────────────────────
@@ -299,7 +318,7 @@ async function searchBrave(query: string, apiKey?: string): Promise<string> {
     // Format results for AI context
     const formatted = results
       .slice(0, 5)
-      .map((r: any, i: number) =>
+      .map((r: { title: string; url: string; description?: string }, i: number) =>
         `[${i + 1}] ${r.title}\nURL: ${r.url}\n${r.description || ''}`
       )
       .join('\n\n');
@@ -320,7 +339,7 @@ export async function callAI(
 ): Promise<string> {
   // If Brave Search API key is configured and search is enabled,
   // use Brave Search for ALL providers and disable their native search
-  const braveKey = (config as any).braveSearchApiKey;
+  const braveKey = 'braveSearchApiKey' in config ? config.braveSearchApiKey : undefined;
   let finalSystemPrompt = systemPrompt;
   let finalConfig = config;
 
@@ -367,7 +386,7 @@ async function callGemini(
     parts: [{ text: m.text }]
   }));
 
-  const body: any = {
+  const body: GeminiRequestBody = {
     system_instruction: { parts: [{ text: finalSystemPrompt }] },
     contents: [...formattedHistory, { role: "user", parts: [{ text: userMessage }] }],
     generationConfig: { temperature: 0.3, maxOutputTokens: 1024 },
@@ -408,7 +427,7 @@ async function callGroq(
   // Format history
   const formattedHistory = history.map(m => ({ role: m.role, content: m.text }));
 
-  let messages: any[];
+  let messages: Array<{ role: string; content: string }>;
 
   if (isCompoundModel) {
     // Compound models: Groq docs show only user messages, no system role.
@@ -429,7 +448,7 @@ async function callGroq(
     ];
   }
 
-  const body: any = {
+  const body: OpenAIRequestBody = {
     model: model,
     messages: messages,
     temperature: 0.3,
@@ -479,7 +498,7 @@ async function callMistral(
 
   const formattedHistory = history.map(m => ({ role: m.role, content: m.text }));
 
-  const body: any = {
+  const body: OpenAIRequestBody = {
     model: model,
     messages: [
       { role: "system", content: finalSystemPrompt },
@@ -492,7 +511,7 @@ async function callMistral(
 
   // Enable web search if configured (native support)
   if (config.enableSearch) {
-    body.tools = [{ type: "web_search" }];
+    (body as OpenAIRequestBody & { tools: Array<{ type: string }> }).tools = [{ type: "web_search" }];
   }
 
   const res = await fetch(url, {
@@ -531,7 +550,7 @@ async function callClaude(
 
   const formattedHistory = history.map(m => ({ role: m.role, content: m.text }));
 
-  const body: any = {
+  const body: ClaudeRequestBody = {
     model: model,
     system: finalSystemPrompt,
     messages: [...formattedHistory, { role: "user", content: userMessage }],
@@ -569,8 +588,8 @@ async function callClaude(
   // Extract text from content blocks (handles both text and tool results)
   const content = data?.content || [];
   const textBlocks = content
-    .filter((block: any) => block.type === "text")
-    .map((block: any) => block.text)
+    .filter((block: { type: string }) => block.type === "text")
+    .map((block: { text: string }) => block.text)
     .join("\n");
 
   return textBlocks || "";
@@ -694,7 +713,7 @@ Title: ${title}
 Description: ${description}
 Content: ${content?.slice(0, 600) || ""}`;
 
-  const raw = await callAI(config, system, user, signal);
+  const raw = await callAI(config, system, user, [], signal);
   try {
     const clean = raw.replace(/```json|```/g, "").trim();
     const arr = JSON.parse(clean);
@@ -722,7 +741,7 @@ Plain text only — no markdown, no bullet points.`;
 Description: ${description}
 Content: ${content?.slice(0, 2000) || ""}`;
 
-  return callAI(config, system, user, signal);
+  return callAI(config, system, user, [], signal);
 }
 
 /** Auto-generate a title for a link by fetching and analyzing the URL */
@@ -742,7 +761,7 @@ Description: ${description || ""}
 
 Generate a clear, descriptive title for this link.`;
 
-  return callAI(config, system, user, signal);
+  return callAI(config, system, user, [], signal);
 }
 
 /** Format markdown content using available MD tools */
@@ -789,7 +808,7 @@ Respond with the formatted markdown content.`;
 
 ${content}`;
 
-  return callAI(config, system, user, signal);
+  return callAI(config, system, user, [], signal);
 }
 
 /** Format plain text content (improve structure without markdown) */
@@ -817,7 +836,7 @@ Respond with the formatted plain text content.`;
 
 ${content}`;
 
-  return callAI(config, system, user, signal);
+  return callAI(config, system, user, [], signal);
 }
 
 /** Chat with a single item */
@@ -892,7 +911,7 @@ Example: ["abc123","def456"]`;
 
   const user = `Query: "${query}"\n\nItems:\n${compact}`;
 
-  const raw = await callAI(config, system, user, signal);
+  const raw = await callAI(config, system, user, [], signal);
   try {
     const clean = raw.replace(/```json|```/g, "").trim();
     const arr = JSON.parse(clean);

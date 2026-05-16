@@ -2,26 +2,26 @@ import { Link } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import {
-  ArrowRight, Link2, FileText, Tag, Search, Moon, Pin, Download, Sparkles, Star, Github, Lightbulb, Clipboard, Plus,
+  ArrowRight, Link2, FileText, Tag, Search, Pin, Download, Sparkles, Star, Github, Lightbulb, Clipboard, Plus, Brain, Wand2, MessageSquare, Zap,
 } from "lucide-react";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/Logo";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { ParallaxBackground } from "@/components/ParallaxBackground";
 import { useAuth } from "@/contexts/AuthContext";
+
+gsap.registerPlugin(ScrollTrigger);
 
 const features = [
   { icon: Link2, title: "Save Links", body: "Auto-grab title, image and description from any URL. Paste anywhere to save instantly." },
   { icon: FileText, title: "Markdown Notes", body: "Full markdown editor with live preview and color choices. Write beautifully formatted notes." },
   { icon: Tag, title: "Tags & Collections", body: "Color tags and smart filters keep things tidy. Organize with custom collections." },
   { icon: Search, title: "Instant Search", body: "Real-time search across titles, content and tags. Find anything in milliseconds." },
-  { icon: Moon, title: "Dark Mode", body: "Easy on the eyes, day or night. Your preference, remembered across devices." },
   { icon: Clipboard, title: "Quick Capture", body: "Paste a URL anywhere in the app to save it instantly. Keyboard shortcuts for everything." },
   { icon: Pin, title: "Pin Important Items", body: "Keep your favorites at the top, always within reach. Never lose important stuff." },
   { icon: Download, title: "Export Your Data", body: "Download all your stash as JSON whenever you want. Your data, your control." },
-  { icon: Sparkles, title: "Beautiful UI", body: "Carefully crafted interface with smooth animations. A joy to use every day." },
   { icon: Github, title: "Open Source", body: "Built in the open. Contribute, fork, or run your own instance. MIT licensed." },
 ];
 
@@ -35,6 +35,10 @@ const Index = () => {
   const heroTitleRef = useRef<HTMLHeadingElement>(null);
   const heroDescRef = useRef<HTMLParagraphElement>(null);
   const heroButtonsRef = useRef<HTMLDivElement>(null);
+  const ctaSectionRef = useRef<HTMLElement>(null);
+  const ctaTitleRef = useRef<HTMLHeadingElement>(null);
+  const ctaDescRef = useRef<HTMLParagraphElement>(null);
+  const ctaButtonRef = useRef<HTMLDivElement>(null);
 
   useGSAP(() => {
     const tl = gsap.timeline();
@@ -80,6 +84,51 @@ const Index = () => {
       }, "-=0.6");
   }, { scope: heroContainerRef });
 
+  // CTA Section - Reveal Animation (same as hero)
+  useGSAP(() => {
+    if (!ctaSectionRef.current) return;
+
+    // Initial state: blur and opacity 0
+    gsap.set([ctaTitleRef.current, ctaDescRef.current, ctaButtonRef.current], {
+      opacity: 0,
+      filter: "blur(10px)",
+      y: 20,
+    });
+
+    const tl = gsap.timeline({
+      scrollTrigger: {
+        trigger: ctaSectionRef.current,
+        start: "top 80%",
+        toggleActions: "play none none none",
+      }
+    });
+
+    // Animate title
+    tl.to(ctaTitleRef.current, {
+      opacity: 1,
+      filter: "blur(0px)",
+      y: 0,
+      duration: 1,
+      ease: "power3.out",
+    })
+      // Animate description
+      .to(ctaDescRef.current, {
+        opacity: 1,
+        filter: "blur(0px)",
+        y: 0,
+        duration: 0.8,
+        ease: "power2.out",
+      }, "-=0.6")
+      // Animate button
+      .to(ctaButtonRef.current, {
+        opacity: 1,
+        filter: "blur(0px)",
+        y: 0,
+        duration: 0.8,
+        ease: "power2.out",
+      }, "-=0.6");
+  }, { scope: ctaSectionRef, dependencies: [] });
+
   useEffect(() => {
     const handler = (e: Event) => {
       e.preventDefault();
@@ -111,6 +160,7 @@ const Index = () => {
           <Logo />
           <nav className="hidden md:flex items-center gap-8 text-sm text-muted-foreground">
             <a href="#features" className="hover:text-secondary transition-colors">Features</a>
+            <a href="#ai" className="hover:text-secondary transition-colors">AI</a>
             <a href="#how" className="hover:text-secondary transition-colors">How it works</a>
             <a href="#love" className="hover:text-secondary transition-colors">Love</a>
           </nav>
@@ -256,6 +306,126 @@ const Index = () => {
         </div>
       </section>
 
+      {/* AI Section */}
+      <section id="ai" className="py-16 sm:py-20 md:py-24 lg:py-32">
+        <div className="container px-4 sm:px-6 relative z-10">
+          <div className="text-center max-w-3xl mx-auto mb-12 sm:mb-16">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent text-accent-foreground text-sm font-medium mb-6">
+              <Brain className="w-4 h-4 text-primary" />
+              <span
+                className="italic bg-gradient-to-r from-[#ff8a4c] via-[#ff8a9d] to-[#c79ce3] bg-[length:200%_auto] text-transparent bg-clip-text animate-gradient-shift"
+                style={{
+                  animation: 'gradientShift 8s ease-in-out infinite, fadeInScale 2s ease-out 0.5s both'
+                }}
+              >
+                AI-Powered Intelligence
+              </span>
+            </div>
+            
+            <h2 className="font-display text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-semibold text-secondary text-balance leading-tight">
+              Your personal AI assistant{" "}
+              <span
+                className="italic bg-gradient-to-r from-[#ff8a4c] via-[#ff8a9d] to-[#c79ce3] bg-[length:200%_auto] text-transparent bg-clip-text animate-gradient-shift"
+                style={{
+                  animation: 'gradientShift 8s ease-in-out infinite, fadeInScale 2s ease-out 0.5s both'
+                }}
+              >
+                for everything you save
+              </span>
+            </h2>
+            
+            <p className="mt-4 sm:mt-6 text-base sm:text-lg text-muted-foreground leading-relaxed">
+              Bring your own API key and unlock powerful AI features. Organize smarter, write better, and chat with your knowledge base.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5">
+            {/* Auto-tag */}
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-50px" }}
+              transition={{ duration: 0.4, delay: 0 }}
+              className="bg-card rounded-2xl p-5 sm:p-6 shadow-soft hover-lift"
+            >
+              <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-accent flex items-center justify-center mb-4 sm:mb-5">
+                <Tag className="w-5 h-5 text-primary" />
+              </div>
+              <h3 className="font-display text-base sm:text-lg text-secondary mb-2">Smart Auto-Tagging</h3>
+              <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+                AI analyzes your content and suggests relevant tags automatically. Keep everything organized effortlessly.
+              </p>
+            </motion.div>
+
+            {/* Summarize */}
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-50px" }}
+              transition={{ duration: 0.4, delay: 0.04 }}
+              className="bg-card rounded-2xl p-5 sm:p-6 shadow-soft hover-lift"
+            >
+              <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-accent flex items-center justify-center mb-4 sm:mb-5">
+                <Zap className="w-5 h-5 text-primary" />
+              </div>
+              <h3 className="font-display text-base sm:text-lg text-secondary mb-2">Instant Summaries</h3>
+              <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+                Get concise summaries of long articles and notes. Save time and capture the essence instantly.
+              </p>
+            </motion.div>
+
+            {/* AI Writer */}
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-50px" }}
+              transition={{ duration: 0.4, delay: 0.08 }}
+              className="bg-card rounded-2xl p-5 sm:p-6 shadow-soft hover-lift"
+            >
+              <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-accent flex items-center justify-center mb-4 sm:mb-5">
+                <Wand2 className="w-5 h-5 text-primary" />
+              </div>
+              <h3 className="font-display text-base sm:text-lg text-secondary mb-2">AI Writing Assistant</h3>
+              <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+                Enhance your notes with AI. Rewrite, expand, format, or polish your content with a single click.
+              </p>
+            </motion.div>
+
+            {/* Chat */}
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-50px" }}
+              transition={{ duration: 0.4, delay: 0.12 }}
+              className="bg-card rounded-2xl p-5 sm:p-6 shadow-soft hover-lift"
+            >
+              <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-accent flex items-center justify-center mb-4 sm:mb-5">
+                <MessageSquare className="w-5 h-5 text-primary" />
+              </div>
+              <h3 className="font-display text-base sm:text-lg text-secondary mb-2">Chat with Your Stash</h3>
+              <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+                Ask questions about your saved content. Your AI assistant knows your entire knowledge base.
+              </p>
+            </motion.div>
+          </div>
+
+          {/* AI Providers */}
+          <div className="mt-12 sm:mt-16 text-center">
+            <p className="text-sm text-muted-foreground mb-6">
+              Works with your favorite AI providers
+            </p>
+            <div className="flex flex-wrap items-center justify-center gap-6 sm:gap-8 opacity-60">
+              <div className="text-xs sm:text-sm font-medium text-secondary">OpenAI</div>
+              <div className="text-xs sm:text-sm font-medium text-secondary">Claude</div>
+              <div className="text-xs sm:text-sm font-medium text-secondary">Gemini</div>
+              <div className="text-xs sm:text-sm font-medium text-secondary">Groq</div>
+              <div className="text-xs sm:text-sm font-medium text-secondary">Mistral</div>
+              <div className="text-xs sm:text-sm font-medium text-secondary">Custom APIs</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Simple by design */}
       <section id="how" className="pb-16 sm:pb-20 md:pb-24 lg:pb-32">
         <div className="container px-4 sm:px-6">
@@ -312,9 +482,9 @@ const Index = () => {
       </section>
 
       {/* CTA */}
-      <section className="pb-16 sm:pb-20 md:pb-24">
+      <section ref={ctaSectionRef} className="pb-16 sm:pb-20 md:pb-24">
         <div className="container text-center max-w-3xl px-4 sm:px-6">
-          <h2 className="font-display text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-semibold text-secondary text-balance">
+          <h2 ref={ctaTitleRef} className="font-display text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-semibold text-secondary text-balance">
             Your new <span
               className="italic bg-gradient-to-r from-[#ff8a4c] via-[#ff8a9d] to-[#c79ce3] bg-[length:200%_auto] text-transparent bg-clip-text animate-gradient-shift"
               style={{
@@ -322,14 +492,16 @@ const Index = () => {
               }}
             >favorite place</span> on the internet.
           </h2>
-          <p className="mt-4 sm:mt-6 text-base sm:text-lg text-muted-foreground">
+          <p ref={ctaDescRef} className="mt-4 sm:mt-6 text-base sm:text-lg text-muted-foreground">
             Secure, private, and beautifully organized. Start saving today.
           </p>
-          <Button asChild size="lg" className="mt-8 sm:mt-10 rounded-full gradient-primary text-primary-foreground shadow-pink hover:opacity-95 px-8 sm:px-10 h-12 sm:h-14 text-base w-full sm:w-auto">
-            <Link to={user ? "/app" : "/auth"}>
-              {user ? "Open App" : "Get Started Free"} <ArrowRight className="w-4 h-4 ml-2" />
-            </Link>
-          </Button>
+          <div ref={ctaButtonRef}>
+            <Button asChild size="lg" className="mt-8 sm:mt-10 rounded-full gradient-primary text-primary-foreground shadow-pink hover:opacity-95 px-8 sm:px-10 h-12 sm:h-14 text-base w-full sm:w-auto">
+              <Link to={user ? "/app" : "/auth"}>
+                {user ? "Open App" : "Get Started Free"} <ArrowRight className="w-4 h-4 ml-2" />
+              </Link>
+            </Button>
+          </div>
         </div>
       </section>
 

@@ -237,6 +237,10 @@
     text-wrap: balance;
   }
 
+  .perspective-1000 {
+    perspective: 1000px;
+  }
+
   /* Stylish blockquotes for markdown */
   .prose blockquote {
     @apply border-l-4 border-primary/40 bg-primary/5 pl-4 pr-3 py-2 my-4 italic font-serif text-base;

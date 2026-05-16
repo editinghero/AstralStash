@@ -10,7 +10,7 @@ database_id = "7b55e245-78f2-44b2-9ba5-8da519f9740a"
 [vars]
 # Non-sensitive variables only
 ENVIRONMENT = "production"
-ALLOW_SIGNUPS = "true"
+ALLOW_SIGNUPS = "false"
 
 
 # IMPORTANT: Set JWT_SECRET using Cloudflare dashboard or wrangler CLI:
