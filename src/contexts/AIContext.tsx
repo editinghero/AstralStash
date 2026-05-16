@@ -31,8 +31,30 @@ export function AIProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  // Load config on mount and when auth token changes
   useEffect(() => {
-    refreshConfig();
+    const token = localStorage.getItem('auth_token');
+    if (token) {
+      refreshConfig();
+    } else {
+      setConfig(null);
+      setLoading(false);
+    }
+  }, [refreshConfig]);
+
+  // Listen for storage events (sign in/out in other tabs)
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'auth_token') {
+        if (e.newValue) {
+          refreshConfig();
+        } else {
+          setConfig(null);
+        }
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
   }, [refreshConfig]);
 
   const updateConfig = useCallback(async (c: AIConfig) => {

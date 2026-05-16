@@ -21,6 +21,7 @@ Your personal space for links, notes, and ideas — beautifully organized, secur
 
 ###  Content Management
 - **Save Everything** - Links, notes, and ideas in one beautiful place
+- **Rich Markdown Editor** - 17 formatting tools including headings, lists, code blocks, tables, images, and more
 - **Organize Easily** - Tags, collections, and smart filters
 - **Pin Important Items** - Keep favorites at the top
 - **Export Your Data** - Download everything as JSON anytime
@@ -53,8 +54,9 @@ That's it! You're ready to start saving.
 
 **Write a Note:**
 - Click **+** → **Note**
-- Choose a color
-- Write in Markdown (supports **bold**, *italic*, lists, etc.)
+- Choose between Markdown or Plain Text format
+- Use the toolbar for formatting (bold, italic, headings, lists, code, links, images, tables, etc.)
+- For images: Use direct image URLs from services like Imgur, Cloudinary, or similar
 - Add tags
 - Click "Save"
 

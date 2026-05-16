@@ -1,12 +1,15 @@
 import { Link } from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { useState, useEffect } from "react";
 import {
   ArrowRight, Link2, FileText, Tag, Search, Moon, Pin, Download, Sparkles, Star, Github, Lightbulb, Clipboard, Plus,
 } from "lucide-react";
+import gsap from "gsap";
+import { useGSAP } from "@gsap/react";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/Logo";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { ParallaxBackground } from "@/components/ParallaxBackground";
 import { useAuth } from "@/contexts/AuthContext";
 
 const features = [
@@ -27,6 +30,56 @@ const Index = () => {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [showInstall, setShowInstall] = useState(false);
 
+  const heroContainerRef = useRef<HTMLDivElement>(null);
+  const heroBadgeRef = useRef<HTMLDivElement>(null);
+  const heroTitleRef = useRef<HTMLHeadingElement>(null);
+  const heroDescRef = useRef<HTMLParagraphElement>(null);
+  const heroButtonsRef = useRef<HTMLDivElement>(null);
+
+  useGSAP(() => {
+    const tl = gsap.timeline();
+
+    // Initial state: blur and opacity 0
+    gsap.set([heroBadgeRef.current, heroTitleRef.current, heroDescRef.current, heroButtonsRef.current], {
+      opacity: 0,
+      filter: "blur(10px)",
+      y: 20,
+    });
+
+    // Animate badge
+    tl.to(heroBadgeRef.current, {
+      opacity: 1,
+      filter: "blur(0px)",
+      y: 0,
+      duration: 0.8,
+      ease: "power2.out",
+    })
+      // Animate title
+      .to(heroTitleRef.current, {
+        opacity: 1,
+        filter: "blur(0px)",
+        y: 0,
+        duration: 1,
+        ease: "power3.out",
+      }, "-=0.4")
+      // Animate description
+      .to(heroDescRef.current, {
+        opacity: 1,
+        filter: "blur(0px)",
+        y: 0,
+        duration: 0.8,
+        ease: "power2.out",
+      }, "-=0.6")
+      // Animate buttons
+      .to(heroButtonsRef.current, {
+        opacity: 1,
+        filter: "blur(0px)",
+        y: 0,
+        duration: 0.8,
+        ease: "power2.out",
+      }, "-=0.6");
+  }, { scope: heroContainerRef });
+
   useEffect(() => {
     const handler = (e: Event) => {
       e.preventDefault();
@@ -40,10 +93,10 @@ const Index = () => {
 
   const handleInstall = async () => {
     if (!deferredPrompt) return;
-    
+
     deferredPrompt.prompt();
     const { outcome } = await deferredPrompt.userChoice;
-    
+
     if (outcome === 'accepted') {
       setShowInstall(false);
     }
@@ -79,35 +132,41 @@ const Index = () => {
       </header>
 
       {/* Hero */}
-      <section className="relative overflow-hidden">
-        <div className="container pt-10 pb-16 sm:pt-14 sm:pb-20 md:pt-20 md:pb-28 text-center px-4 sm:px-6">
-          <motion.div
-            initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}
+      <section className="relative overflow-hidden bg-background" ref={heroContainerRef}>
+
+        <div className="container relative z-10 pt-10 pb-16 sm:pt-14 sm:pb-20 md:pt-20 md:pb-28 text-center px-4 sm:px-6">
+          <div
+            ref={heroBadgeRef}
             className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 rounded-full bg-accent text-accent-foreground text-xs font-medium mb-6 sm:mb-8"
           >
             <Sparkles className="w-3.5 h-3.5 text-primary" />
             ✦ A nicer home for the things you love
-          </motion.div>
+          </div>
 
-          <motion.h1
-            initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.05 }}
+          <h1
+            ref={heroTitleRef}
             className="font-display text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-[5.5rem] font-semibold text-secondary leading-[1.1] sm:leading-[1.05] text-balance max-w-5xl mx-auto px-4"
           >
             Save every good thing<br className="hidden sm:block" />
             you find online{" "}
-            <span className="text-primary italic">in one beautiful place.</span>
-          </motion.h1>
+            <span
+              className="italic bg-gradient-to-r from-[#ff8a4c] via-[#ff8a9d] to-[#c79ce3] bg-[length:200%_auto] text-transparent bg-clip-text animate-gradient-shift"
+              style={{
+                animation: 'gradientShift 8s ease-in-out infinite, fadeInScale 2s ease-out 0.5s both'
+              }}
+            >in one beautiful place.</span>
+          </h1>
 
-          <motion.p
-            initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.15 }}
+          <p
+            ref={heroDescRef}
             className="mt-6 sm:mt-8 text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed px-4"
           >
             From research to inspiration — links, notes, ideas and more. <br className="hidden sm:block" />
             All yours. Secure, private, and beautifully organized.
-          </motion.p>
+          </p>
 
-          <motion.div
-            initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.25 }}
+          <div
+            ref={heroButtonsRef}
             className="mt-8 sm:mt-10 flex flex-col sm:flex-row items-center justify-center gap-3 px-4"
           >
             <Button asChild size="lg" className="w-full sm:w-auto rounded-full gradient-primary text-primary-foreground shadow-pink hover:opacity-95 px-6 sm:px-8 h-12 sm:h-14 text-base">
@@ -115,12 +174,12 @@ const Index = () => {
                 {user ? "Open App" : "Start Saving Free"} <ArrowRight className="w-4 h-4 ml-2" />
               </Link>
             </Button>
-            <Button asChild size="lg" variant="outline" className="w-full sm:w-auto rounded-full px-6 sm:px-8 h-12 sm:h-14 text-base border-secondary/20 hover:bg-secondary hover:text-secondary-foreground">
+            <Button asChild size="lg" variant="outline" className="w-full sm:w-auto rounded-full px-6 sm:px-8 h-12 sm:h-14 text-base border-secondary/20 hover:bg-secondary hover:text-secondary-foreground bg-background/50 backdrop-blur-sm">
               <a href="#how">See how it works</a>
             </Button>
-          </motion.div>
+          </div>
 
-          <p className="mt-4 sm:mt-6 text-xs sm:text-sm text-muted-foreground flex items-center justify-center gap-1.5 flex-wrap px-4">
+          <p className="mt-4 sm:mt-6 text-xs sm:text-sm text-muted-foreground flex items-center justify-center gap-1.5 flex-wrap px-4 relative z-10">
             <kbd className="px-2 py-0.5 rounded-md border bg-card text-secondary text-xs font-mono">Ctrl</kbd>
             +
             <kbd className="px-2 py-0.5 rounded-md border bg-card text-secondary text-xs font-mono">V</kbd>
@@ -148,16 +207,16 @@ const Index = () => {
 
             <div className="rounded-3xl bg-card shadow-lift p-5 md:p-7 border border-border/60">
               <div className="masonry-preview">
-                <PreviewLink color="FFD6D6" title="The Quiet Power of Slow Web" domain="essays.cafe" tags={["reading", "design"]} />
-                <PreviewNote bg="#FFF0F3" title="Reading list — design systems"
+                <PreviewLink color="FFEBEE" title="The Quiet Power of Slow Web" domain="essays.cafe" tags={["reading", "design"]} />
+                <PreviewNote bg="#FFF5F7" title="Reading list — design systems"
                   body="Tokens, typography, spacing, motion. The fundamentals never go out of style." />
-                <PreviewLink color="D6E4FF" title="Playfair Display on Google Fonts" domain="fonts.google.com" tags={["typography"]} />
-                <PreviewIdea bg="#F0FFF4" body="Build the thing you wish existed." />
-                <PreviewLink color="FFE0C2" title="A Pattern Language for the Web" domain="patternlang.dev" tags={["architecture"]} />
-                <PreviewNote bg="#F5F0FF" title="Tea, not coffee ☕"
+                <PreviewLink color="E3F2FD" title="Playfair Display on Google Fonts" domain="fonts.google.com" tags={["typography"]} />
+                <PreviewIdea bg="#F1F8E9" body="Build the thing you wish existed." />
+                <PreviewLink color="FFF3E0" title="A Pattern Language for the Web" domain="patternlang.dev" tags={["architecture"]} />
+                <PreviewNote bg="#F3E5F5" title="Tea, not coffee ☕"
                   body="Switching after lunch. Better focus, no jitters. Try **matcha** next." />
-                <PreviewLink color="E8D6FF" title="On Collecting Beautiful Things" domain="kottke.org" />
-                <PreviewIdea bg="#FFFBF0" body="A weekend zine made entirely from my saves." />
+                <PreviewLink color="EDE7F6" title="On Collecting Beautiful Things" domain="kottke.org" />
+                <PreviewIdea bg="#FFFDE7" body="A weekend zine made entirely from my saves." />
               </div>
             </div>
           </motion.div>
@@ -200,7 +259,7 @@ const Index = () => {
       {/* Simple by design */}
       <section id="how" className="pb-16 sm:pb-20 md:pb-24 lg:pb-32">
         <div className="container px-4 sm:px-6">
-          <div className="rounded-2xl sm:rounded-3xl gradient-mint p-6 sm:p-10 md:p-16 lg:p-20" style={{ color: "#1A2B3C" }}>
+          <div className="rounded-2xl sm:rounded-3xl bg-[hsl(160,100%,97%)] p-6 sm:p-10 md:p-16 lg:p-20" style={{ color: "#1A2B3C" }}>
             <div className="text-center max-w-2xl mx-auto mb-10 sm:mb-14">
               <h2 className="font-display text-3xl sm:text-4xl md:text-5xl font-semibold">
                 Simple by design
@@ -231,7 +290,7 @@ const Index = () => {
       {/* Quote */}
       <section id="love" className="pb-16 sm:pb-20 md:pb-24 lg:pb-32">
         <div className="container max-w-4xl px-4 sm:px-6">
-          <div className="rounded-2xl sm:rounded-3xl gradient-warm p-6 sm:p-10 md:p-16 text-center" style={{ color: "#1A2B3C" }}>
+          <div className="rounded-2xl sm:rounded-3xl bg-[hsl(30,100%,96%)] p-6 sm:p-10 md:p-16 text-center" style={{ color: "#1A2B3C" }}>
             <div className="flex justify-center gap-1 mb-4 sm:mb-6">
               {Array.from({ length: 5 }).map((_, i) => (
                 <Star key={i} className="w-4 h-4 sm:w-5 sm:h-5 fill-primary text-primary" />
@@ -256,7 +315,12 @@ const Index = () => {
       <section className="pb-16 sm:pb-20 md:pb-24">
         <div className="container text-center max-w-3xl px-4 sm:px-6">
           <h2 className="font-display text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-semibold text-secondary text-balance">
-            Your new <span className="italic text-primary">favorite place</span> on the internet.
+            Your new <span
+              className="italic bg-gradient-to-r from-[#ff8a4c] via-[#ff8a9d] to-[#c79ce3] bg-[length:200%_auto] text-transparent bg-clip-text animate-gradient-shift"
+              style={{
+                animation: 'gradientShift 8s ease-in-out infinite, fadeInScale 2s ease-out 1.5s both'
+              }}
+            >favorite place</span> on the internet.
           </h2>
           <p className="mt-4 sm:mt-6 text-base sm:text-lg text-muted-foreground">
             Secure, private, and beautifully organized. Start saving today.

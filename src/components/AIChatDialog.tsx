@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Loader2, Send, Sparkles, Bot, Search, ChevronDown, Brain } from "lucide-react";
+import { Loader2, Send, Sparkles, Bot, Search, ChevronDown, Brain, Copy, Check } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { useAI } from "@/contexts/AIContext";
@@ -19,16 +19,34 @@ type Props =
   | { mode: "item"; item: StashItem; open: boolean; onOpenChange: (o: boolean) => void; onOpenAISettings: () => void }
   | { mode: "kb"; items: StashItem[]; open: boolean; onOpenChange: (o: boolean) => void; onOpenAISettings: () => void };
 
-// Parse <think>...</think> blocks from AI response
+// Parse thinking blocks from AI response
+// Supports multiple formats: <think>, <thinking>, and other common variations
 function parseThinkBlocks(text: string): { thinking: string | null; content: string } {
-  const thinkRegex = /<think>([\s\S]*?)<\/think>/i;
-  const match = text.match(thinkRegex);
-  if (match) {
-    const thinking = match[1].trim();
-    const content = text.replace(thinkRegex, "").trim();
-    return { thinking, content };
+  // Try multiple thinking tag formats used by different models
+  const patterns = [
+    /<think>([\s\S]*?)<\/think>/gi,           // Generic <think>
+    /<thinking>([\s\S]*?)<\/thinking>/gi,     // Common <thinking>
+    /<thought>([\s\S]*?)<\/thought>/gi,       // Alternative <thought>
+    /<reasoning>([\s\S]*?)<\/reasoning>/gi,   // Alternative <reasoning>
+  ];
+
+  let thinking: string | null = null;
+  let content = text;
+
+  for (const pattern of patterns) {
+    const matches = [...text.matchAll(pattern)];
+    if (matches.length > 0) {
+      // Collect all thinking blocks
+      const thinkingParts = matches.map(m => m[1].trim());
+      thinking = thinkingParts.join('\n\n');
+      
+      // Remove all thinking blocks from content
+      content = text.replace(pattern, '').trim();
+      break; // Stop after first matching pattern
+    }
   }
-  return { thinking: null, content: text };
+
+  return { thinking, content };
 }
 
 // Collapsible think block component
@@ -67,33 +85,46 @@ function ThinkBlock({ thinking }: { thinking: string }) {
 // Markdown renderer for assistant messages
 function MarkdownMessage({ text }: { text: string }) {
   const { thinking, content } = parseThinkBlocks(text);
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(content);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   return (
-    <>
+    <div className="relative group">
       {thinking && <ThinkBlock thinking={thinking} />}
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{
           // Style tables
           table: ({ children }) => (
-            <div className="overflow-x-auto my-2 rounded-lg border border-border/50">
-              <table className="min-w-full text-xs border-collapse">{children}</table>
+            <div className="overflow-x-auto my-2 rounded-lg border border-gray-400 dark:border-gray-600">
+              <table className="min-w-full text-xs">{children}</table>
             </div>
           ),
           thead: ({ children }) => (
             <thead className="bg-muted/60">{children}</thead>
           ),
+          tbody: ({ children }) => <tbody>{children}</tbody>,
+          tr: ({ children }) => <tr className="border-b border-gray-400 dark:border-gray-600 last:border-0">{children}</tr>,
           th: ({ children }) => (
-            <th className="px-2.5 py-1.5 text-left font-semibold border-b border-border/50">{children}</th>
+            <th className="px-2.5 py-1.5 text-left font-semibold border-b border-gray-400 dark:border-gray-600 border-r border-gray-400 dark:border-gray-600 last:border-r-0">{children}</th>
           ),
           td: ({ children }) => (
-            <td className="px-2.5 py-1.5 border-b border-border/30">{children}</td>
+            <td className="px-2.5 py-1.5 border-r border-gray-400 dark:border-gray-600 last:border-r-0">{children}</td>
           ),
           // Style links
           a: ({ href, children }) => (
             <a href={href} target="_blank" rel="noreferrer" className="text-primary underline underline-offset-2 hover:text-primary/80 break-all">
               {children}
             </a>
+          ),
+          // Style images
+          img: ({ src, alt }) => (
+            <img src={src} alt={alt} className="max-w-full h-auto rounded-lg border border-border/40 my-2" />
           ),
           // Style code blocks
           code: ({ className, children, ...props }) => {
@@ -117,9 +148,9 @@ function MarkdownMessage({ text }: { text: string }) {
           ol: ({ children }) => <ol className="list-decimal pl-4 mb-1.5 space-y-0.5">{children}</ol>,
           li: ({ children }) => <li className="text-sm">{children}</li>,
           // Style headings
-          h1: ({ children }) => <h1 className="text-base font-bold mb-1.5">{children}</h1>,
-          h2: ({ children }) => <h2 className="text-sm font-bold mb-1">{children}</h2>,
-          h3: ({ children }) => <h3 className="text-sm font-semibold mb-1">{children}</h3>,
+          h1: ({ children }) => <h1 className="text-lg font-bold mb-2 mt-3 first:mt-0">{children}</h1>,
+          h2: ({ children }) => <h2 className="text-base font-bold mb-2 mt-3 first:mt-0">{children}</h2>,
+          h3: ({ children }) => <h3 className="text-sm font-semibold mb-1.5 mt-2 first:mt-0">{children}</h3>,
           // Style blockquote
           blockquote: ({ children }) => (
             <blockquote className="border-l-2 border-primary/40 pl-3 my-1.5 text-muted-foreground italic">
@@ -128,18 +159,44 @@ function MarkdownMessage({ text }: { text: string }) {
           ),
           // Style strong/bold
           strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+          // Style em/italic
+          em: ({ children }) => <em className="italic">{children}</em>,
+          // Style strikethrough
+          del: ({ children }) => <del className="line-through opacity-70">{children}</del>,
           // Style hr
           hr: () => <hr className="my-2 border-border/40" />,
+          // Style task list checkboxes
+          input: ({ type, checked, ...props }) => {
+            if (type === 'checkbox') {
+              return (
+                <input 
+                  type="checkbox" 
+                  checked={checked} 
+                  disabled 
+                  className="mr-1.5 align-middle cursor-not-allowed" 
+                  {...props} 
+                />
+              );
+            }
+            return <input type={type} {...props} />;
+          },
         }}
       >
         {content}
       </ReactMarkdown>
-    </>
+      <button
+        onClick={handleCopy}
+        className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-md bg-background/80 hover:bg-accent border border-border/40"
+        title="Copy response"
+      >
+        {copied ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
+      </button>
+    </div>
   );
 }
 
 export function AIChatDialog(props: Props) {
-  const { config, isConfigured } = useAI();
+  const { config, isConfigured, updateConfig } = useAI();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -194,9 +251,14 @@ export function AIChatDialog(props: Props) {
         setMessages([]);
       }
       setInput("");
+    }
+  }, [props.open, chatKey]);
+
+  useEffect(() => {
+    if (props.open) {
       setEnableSearch(config?.enableSearch ?? false);
     }
-  }, [props.open, config, chatKey]);
+  }, [props.open, config?.enableSearch]);
 
   useEffect(() => {
     if (props.open && messages.length > 0) {
@@ -312,7 +374,12 @@ export function AIChatDialog(props: Props) {
             <Switch
               id="chat-search"
               checked={enableSearch}
-              onCheckedChange={setEnableSearch}
+              onCheckedChange={async (checked) => {
+                setEnableSearch(checked);
+                if (config) {
+                  await updateConfig({ ...config, enableSearch: checked });
+                }
+              }}
               disabled={loading}
             />
           </div>
@@ -341,7 +408,7 @@ export function AIChatDialog(props: Props) {
                   </div>
                 )}
                 <div
-                  className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed break-words overflow-hidden ${
+                  className={`max-w-[80%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed break-words overflow-hidden ${
                     m.role === "user"
                       ? "bg-primary text-primary-foreground rounded-br-sm"
                       : "bg-muted rounded-bl-sm"

@@ -6,8 +6,10 @@
 
 @layer base {
   :root {
-    --background: 36 38% 97%;            /* warm cream #FAF7F2 */
-    --foreground: 210 38% 18%;           /* deep navy ink */
+    --background: 36 38% 97%;
+    /* warm cream #FAF7F2 */
+    --foreground: 210 38% 18%;
+    /* deep navy ink */
 
     --card: 0 0% 100%;
     --card-foreground: 210 38% 18%;
@@ -15,17 +17,20 @@
     --popover: 0 0% 100%;
     --popover-foreground: 210 38% 18%;
 
-    --primary: 351 75% 65%;              /* coral/salmon pink */
+    --primary: 351 75% 65%;
+    /* coral/salmon pink */
     --primary-foreground: 0 0% 100%;
     --primary-glow: 351 90% 78%;
 
-    --secondary: 210 40% 22%;            /* deep navy */
+    --secondary: 210 40% 22%;
+    /* deep navy */
     --secondary-foreground: 36 38% 97%;
 
     --muted: 30 25% 93%;
     --muted-foreground: 210 15% 40%;
 
-    --accent: 351 80% 92%;               /* muted rose for tags */
+    --accent: 351 80% 92%;
+    /* muted rose for tags */
     --accent-foreground: 210 38% 18%;
 
     --destructive: 0 75% 55%;
@@ -38,12 +43,18 @@
     --radius: 1rem;
 
     /* Pastel note card backgrounds */
-    --note-1: 30 60% 92%;   /* peach */
-    --note-2: 351 70% 93%;  /* rose */
-    --note-3: 180 40% 90%;  /* mint */
-    --note-4: 220 60% 93%;  /* sky */
-    --note-5: 50 70% 90%;   /* butter */
-    --note-6: 280 40% 93%;  /* lavender */
+    --note-1: 30 60% 92%;
+    /* peach */
+    --note-2: 351 70% 93%;
+    /* rose */
+    --note-3: 180 40% 90%;
+    /* mint */
+    --note-4: 220 60% 93%;
+    /* sky */
+    --note-5: 50 70% 90%;
+    /* butter */
+    --note-6: 280 40% 93%;
+    /* lavender */
 
     /* Gradients */
     --gradient-warm: linear-gradient(135deg, hsl(30 80% 92%) 0%, hsl(351 80% 90%) 100%);
@@ -69,19 +80,25 @@
   }
 
   .dark {
-    --background: 0 0% 8%;              /* #141414 */
-    --foreground: 36 22% 92%;           /* #F0EDE8 */
-    --card: 0 0% 12%;                   /* #1E1E1E */
+    --background: 0 0% 8%;
+    /* #141414 */
+    --foreground: 36 22% 92%;
+    /* #F0EDE8 */
+    --card: 0 0% 12%;
+    /* #1E1E1E */
     --card-foreground: 36 22% 92%;
-    --popover: 0 0% 14%;                /* #242424 */
+    --popover: 0 0% 14%;
+    /* #242424 */
     --popover-foreground: 36 22% 92%;
     --primary: 351 75% 65%;
     --primary-foreground: 0 0% 100%;
     --primary-glow: 351 90% 78%;
-    --secondary: 36 22% 92%;            /* light text used as headings color */
+    --secondary: 36 22% 92%;
+    /* light text used as headings color */
     --secondary-foreground: 0 0% 8%;
     --muted: 0 0% 14%;
-    --muted-foreground: 0 0% 53%;       /* #888888 */
+    --muted-foreground: 0 0% 53%;
+    /* #888888 */
     --accent: 351 30% 20%;
     --accent-foreground: 36 22% 92%;
     --destructive: 0 70% 55%;
@@ -114,23 +131,44 @@
     font-feature-settings: "ss01", "cv11";
     transition: background-color 0.3s ease, color 0.3s ease;
   }
-  h1, h2, h3, h4, .font-display {
+
+  h1,
+  h2,
+  h3,
+  h4,
+  .font-display {
     font-family: 'Playfair Display', Georgia, serif;
     letter-spacing: -0.02em;
   }
 }
 
 @layer utilities {
-  .font-display { font-family: 'Playfair Display', Georgia, serif; }
-  .font-sans-body { font-family: 'Inter', system-ui, sans-serif; }
+  .font-display {
+    font-family: 'Playfair Display', Georgia, serif;
+  }
+
+  .font-sans-body {
+    font-family: 'Inter', system-ui, sans-serif;
+  }
 
   .masonry {
     column-count: 1;
     column-gap: 1.25rem;
   }
-  @media (min-width: 640px) { .masonry { column-count: 2; } }
-  @media (min-width: 1024px) { .masonry { column-count: 3; } }
-  .masonry > * {
+
+  @media (min-width: 640px) {
+    .masonry {
+      column-count: 2;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .masonry {
+      column-count: 3;
+    }
+  }
+
+  .masonry>* {
     break-inside: avoid;
     margin-bottom: 1.25rem;
   }
@@ -139,60 +177,103 @@
     column-count: 2;
     column-gap: 1rem;
   }
-  @media (min-width: 768px) { .masonry-preview { column-count: 3; } }
-  @media (min-width: 1024px) { .masonry-preview { column-count: 4; } }
+
+  @media (min-width: 768px) {
+    .masonry-preview {
+      column-count: 3;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .masonry-preview {
+      column-count: 4;
+    }
+  }
 
   .hover-lift {
     transition: var(--transition-smooth);
   }
+
   @media (hover: hover) {
     .hover-lift:hover {
       transform: translateY(-4px);
       box-shadow: var(--shadow-lift);
     }
   }
+
   .hover-lift:active {
     transform: scale(0.98);
   }
 
-  .gradient-warm { background: var(--gradient-warm); }
-  .gradient-primary { background: var(--gradient-primary); }
-  .gradient-mint { background: var(--gradient-mint); }
+  .gradient-warm {
+    background: var(--gradient-warm);
+  }
 
-  .shadow-soft { box-shadow: var(--shadow-soft); }
-  .shadow-card { box-shadow: var(--shadow-card); }
-  .shadow-lift { box-shadow: var(--shadow-lift); }
-  .shadow-pink { box-shadow: var(--shadow-pink); }
+  .gradient-primary {
+    background: var(--gradient-primary);
+  }
 
-  .text-balance { text-wrap: balance; }
+  .gradient-mint {
+    background: var(--gradient-mint);
+  }
+
+  .shadow-soft {
+    box-shadow: var(--shadow-soft);
+  }
+
+  .shadow-card {
+    box-shadow: var(--shadow-card);
+  }
+
+  .shadow-lift {
+    box-shadow: var(--shadow-lift);
+  }
+
+  .shadow-pink {
+    box-shadow: var(--shadow-pink);
+  }
+
+  .text-balance {
+    text-wrap: balance;
+  }
 
   /* Stylish blockquotes for markdown */
   .prose blockquote {
     @apply border-l-4 border-primary/40 bg-primary/5 pl-4 pr-3 py-2 my-4 italic font-serif text-base;
-    quotes: """ """ "'" "'";
+    quotes: "" " " "" "'" "'";
   }
+
   .prose blockquote::before {
     content: open-quote;
     @apply text-primary text-3xl font-serif leading-none mr-1 float-left;
   }
+
   .prose blockquote p {
     @apply inline;
   }
 
   /* Global Scrollbars for Landing/App Pages */
-  html::-webkit-scrollbar, body::-webkit-scrollbar {
+  html::-webkit-scrollbar,
+  body::-webkit-scrollbar {
     width: 6px;
   }
-  html::-webkit-scrollbar-track, body::-webkit-scrollbar-track {
+
+  html::-webkit-scrollbar-track,
+  body::-webkit-scrollbar-track {
     background: transparent;
   }
-  html::-webkit-scrollbar-thumb, body::-webkit-scrollbar-thumb {
+
+  html::-webkit-scrollbar-thumb,
+  body::-webkit-scrollbar-thumb {
     background: hsl(var(--muted-foreground) / 0.3);
     border-radius: 3px;
   }
-  html::-webkit-scrollbar-thumb:hover, body::-webkit-scrollbar-thumb:hover {
+
+  html::-webkit-scrollbar-thumb:hover,
+  body::-webkit-scrollbar-thumb:hover {
     background: hsl(var(--muted-foreground) / 0.5);
   }
+
   html {
     scrollbar-width: thin;
     scrollbar-color: hsl(var(--muted-foreground) / 0.3) transparent;
@@ -203,17 +284,54 @@
   .enlarged-dialog-scroll::-webkit-scrollbar {
     width: 6px;
   }
+
   .sidebar-scroll::-webkit-scrollbar-track,
   .enlarged-dialog-scroll::-webkit-scrollbar-track {
     background: transparent;
   }
+
   .sidebar-scroll::-webkit-scrollbar-thumb,
   .enlarged-dialog-scroll::-webkit-scrollbar-thumb {
     background: hsl(var(--muted-foreground) / 0.3);
     border-radius: 3px;
   }
-  .sidebar-scroll, .enlarged-dialog-scroll {
+
+  .sidebar-scroll,
+  .enlarged-dialog-scroll {
     scrollbar-width: thin;
     scrollbar-color: hsl(var(--muted-foreground) / 0.3) transparent;
+  }
+
+  /* Custom animations for "in one beautiful place" text */
+  @keyframes gradientShift {
+
+    0%,
+    100% {
+      background-position: 0% 50%;
+    }
+
+    50% {
+      background-position: 100% 50%;
+    }
+  }
+
+  @keyframes fadeInScale {
+    0% {
+      opacity: 0;
+      transform: scale(0.9);
+    }
+
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  .animate-gradient-shift {
+    animation: gradientShift 3s ease-in-out infinite;
+  }
+
+  .animate-fade-in-scale {
+    animation: fadeInScale 1s ease-out both;
   }
 }

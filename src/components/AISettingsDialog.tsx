@@ -243,14 +243,22 @@ export function AISettingsDialog({
   };
 
   const handleSave = async () => {
+    // Validate that API key is provided
+    const trimmedKey = apiKey.trim();
+    if (!trimmedKey) {
+      toast.error("Please enter an API key");
+      return;
+    }
+
     setSaving(true);
     try {
       await updateConfig(buildConfig());
       
-      // Save Brave Search API key separately if provided
-      if (braveSearchApiKey.trim()) {
-        const token = localStorage.getItem('auth_token');
-        if (token) {
+      // Save or delete Brave Search API key separately
+      const token = localStorage.getItem('auth_token');
+      if (token) {
+        if (braveSearchApiKey.trim()) {
+          // Save Brave Search API key
           await fetch(`${import.meta.env.VITE_API_URL || '/api'}/ai/brave-search`, {
             method: 'POST',
             headers: {
@@ -258,6 +266,14 @@ export function AISettingsDialog({
               'Authorization': `Bearer ${token}`,
             },
             body: JSON.stringify({ api_key: braveSearchApiKey.trim() }),
+          });
+        } else {
+          // Delete Brave Search API key if empty
+          await fetch(`${import.meta.env.VITE_API_URL || '/api'}/ai/brave-search`, {
+            method: 'DELETE',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+            },
           });
         }
       }
@@ -275,8 +291,26 @@ export function AISettingsDialog({
 
   const handleDisable = async () => {
     try {
+      // Delete AI config from database
       await removeConfig();
-      toast.success("AI disabled");
+      
+      // Also delete Brave Search API key
+      const token = localStorage.getItem('auth_token');
+      if (token) {
+        await fetch(`${import.meta.env.VITE_API_URL || '/api'}/ai/brave-search`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+      }
+      
+      // Clear local state
+      setApiKey("");
+      setBraveSearchApiKey("");
+      setEnableSearch(false);
+      
+      toast.success("AI disabled and all keys removed");
       onOpenChange(false);
     } catch (e: any) {
       toast.error(e.message || "Failed to disable AI");

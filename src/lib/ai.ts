@@ -725,6 +725,101 @@ Content: ${content?.slice(0, 2000) || ""}`;
   return callAI(config, system, user, signal);
 }
 
+/** Auto-generate a title for a link by fetching and analyzing the URL */
+export async function autoGenerateTitle(
+  config: AIConfig,
+  url: string,
+  description?: string,
+  signal?: AbortSignal
+): Promise<string> {
+  const system = `You are a smart title generator for bookmarks and saved links.
+Given a URL and optional description, generate a clear, concise title (max 60 characters).
+The title should be descriptive and capture the main topic or purpose of the link.
+Respond with ONLY the title text, no quotes, no extra formatting.`;
+
+  const user = `URL: ${url}
+Description: ${description || ""}
+
+Generate a clear, descriptive title for this link.`;
+
+  return callAI(config, system, user, signal);
+}
+
+/** Format markdown content using available MD tools */
+export async function formatMarkdown(
+  config: AIConfig,
+  content: string,
+  signal?: AbortSignal
+): Promise<string> {
+  const system = `You are a markdown formatting assistant.
+Format the provided text using proper markdown syntax.
+
+Available markdown tools:
+- **bold** for emphasis
+- *italic* for subtle emphasis
+- ~~strikethrough~~ for deleted/outdated text
+- ## Headings for section titles (use ##, ###, #### etc.)
+- - Bullet lists for unordered items
+- 1. Numbered lists for ordered items
+- - [ ] Task lists for checkboxes/todos
+- \`inline code\` for inline code or technical terms
+- \`\`\`language\ncode block\n\`\`\` for multi-line code blocks
+- [link text](url) for hyperlinks
+- ![alt text](image-url) for images
+- > Quotes for blockquotes or citations
+- --- for horizontal rules/dividers
+- | Table | Header | for tables with | --- | separators
+
+Rules:
+1. Preserve the original meaning and content
+2. Use markdown formatting to improve readability and structure
+3. Add headings to organize sections if the content is long
+4. Use lists for enumerated items
+5. Use bold/italic for emphasis where appropriate
+6. Use code formatting for technical terms, commands, or code snippets
+7. Use task lists for action items or todos
+8. Use tables for structured data
+9. Preserve line breaks between paragraphs
+10. Do NOT add extra content or change the meaning
+11. Return ONLY the formatted markdown, no explanations
+
+Respond with the formatted markdown content.`;
+
+  const user = `Format this content using markdown:
+
+${content}`;
+
+  return callAI(config, system, user, signal);
+}
+
+/** Format plain text content (improve structure without markdown) */
+export async function formatPlainText(
+  config: AIConfig,
+  content: string,
+  signal?: AbortSignal
+): Promise<string> {
+  const system = `You are a text formatting assistant.
+Format the provided text to improve readability and structure using ONLY plain text.
+
+Rules:
+1. Do NOT use markdown syntax (no **, *, ##, -, \`, [], >, etc.)
+2. Use proper line breaks and spacing for readability
+3. Use CAPITAL LETTERS for section headings if needed
+4. Use indentation or numbering for lists
+5. Preserve the original meaning and content
+6. Improve paragraph structure and flow
+7. Do NOT add extra content or change the meaning
+8. Return ONLY the formatted plain text, no explanations
+
+Respond with the formatted plain text content.`;
+
+  const user = `Format this content as plain text:
+
+${content}`;
+
+  return callAI(config, system, user, signal);
+}
+
 /** Chat with a single item */
 export async function chatWithItem(
   config: AIConfig,

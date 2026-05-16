@@ -1,5 +1,7 @@
 import { motion } from "framer-motion";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import remarkBreaks from "remark-breaks";
 import rehypeRaw from "rehype-raw";
 import { ExternalLink, Trash2, FileText, Lightbulb, Pin, RotateCcw, Pencil, Maximize2, Sparkles } from "lucide-react";
 import { StashItem, domainOf } from "@/lib/stash";
@@ -134,13 +136,32 @@ export const StashCard = ({ item, onDelete, onPin, onRestore, onPurge, onEdit, o
 
           {(isNote || isIdea) && item.content && (
             <div
-              className={`${isIdea ? "mt-2 text-base" : "mt-3 text-sm"} line-clamp-6 prose prose-sm max-w-none prose-headings:font-display prose-p:my-1 prose-a:text-primary break-words`}
+              className={`${isIdea ? "mt-2 text-base" : "mt-3 text-sm"} line-clamp-6 max-w-none break-words`}
               style={{ color: `${pastelInk}cc` }}
             >
               {isNote && item.format === "txt" ? (
                 <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed">{item.content}</pre>
               ) : (
-                <ReactMarkdown rehypePlugins={[rehypeRaw]}>{item.content}</ReactMarkdown>
+                <ReactMarkdown 
+                  remarkPlugins={[remarkGfm, remarkBreaks]} 
+                  rehypePlugins={[rehypeRaw]}
+                  components={{
+                    h1: ({ children }) => <h1 className="text-lg font-bold mb-1.5 mt-2 first:mt-0 font-display">{children}</h1>,
+                    h2: ({ children }) => <h2 className="text-base font-bold mb-1.5 mt-2 first:mt-0 font-display">{children}</h2>,
+                    h3: ({ children }) => <h3 className="text-sm font-semibold mb-1 mt-1.5 first:mt-0 font-display">{children}</h3>,
+                    p: ({ children }) => <p className="my-1">{children}</p>,
+                    ul: ({ children }) => <ul className="list-disc pl-4 my-1 space-y-0.5">{children}</ul>,
+                    ol: ({ children }) => <ol className="list-decimal pl-4 my-1 space-y-0.5">{children}</ol>,
+                    li: ({ children }) => <li className="text-sm">{children}</li>,
+                    code: ({ children, ...props }) => <code className="px-1 py-0.5 rounded bg-white/60 text-xs font-mono" {...props}>{children}</code>,
+                    a: ({ href, children }) => <a href={href} target="_blank" rel="noreferrer" className="text-primary underline">{children}</a>,
+                    strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+                    em: ({ children }) => <em className="italic">{children}</em>,
+                    del: ({ children }) => <del className="line-through opacity-70">{children}</del>,
+                  }}
+                >
+                  {item.content}
+                </ReactMarkdown>
               )}
             </div>
           )}

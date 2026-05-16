@@ -4,8 +4,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Link2, FileText, Lightbulb, Loader2, Eye, Pencil, Pin, X, Bold, Italic, Heading2, List, Code, Link as LinkIcon, FolderOpen, Quote, HelpCircle, Sparkles } from "lucide-react";
+import { Link2, FileText, Lightbulb, Loader2, Eye, Pencil, Pin, X, Bold, Italic, Heading, Heading2, Heading3, List, ListOrdered, Code, Link as LinkIcon, FolderOpen, Quote, HelpCircle, Sparkles, Strikethrough, Table, Image, CheckSquare, Minus } from "lucide-react";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import remarkBreaks from "remark-breaks";
 import rehypeRaw from "rehype-raw";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -20,6 +22,7 @@ import { toast } from "sonner";
 import { useAI } from "@/contexts/AIContext";
 import { suggestTags, summarizeContent } from "@/lib/ai";
 import { AISettingsDialog } from "@/components/AISettingsDialog";
+import { AIWriterDialog } from "@/components/AIWriterDialog";
 
 type Props = {
   open: boolean;
@@ -185,7 +188,10 @@ export const AddItemDialog = ({ open, onOpenChange, onAdd, onUpdate, initialUrl,
   const { config, isConfigured } = useAI();
   const [aiTagging, setAiTagging] = useState(false);
   const [aiSummarizing, setAiSummarizing] = useState(false);
+  const [aiAutoTitle, setAiAutoTitle] = useState(false);
+  const [aiFormatting, setAiFormatting] = useState(false);
   const [aiSettingsOpen, setAiSettingsOpen] = useState(false);
+  const [aiWriterOpen, setAiWriterOpen] = useState(false);
 
   const isEdit = !!editing;
 
@@ -305,16 +311,61 @@ export const AddItemDialog = ({ open, onOpenChange, onAdd, onUpdate, initialUrl,
     }
   };
 
+  const handleAutoTitle = async () => {
+    if (!isConfigured || !config) { setAiSettingsOpen(true); return; }
+    
+    if (!url) {
+      toast.error("Enter a URL first");
+      return;
+    }
+    
+    setAiAutoTitle(true);
+    try {
+      const { autoGenerateTitle } = await import("@/lib/ai");
+      const generatedTitle = await autoGenerateTitle(config, url, linkDesc);
+      setLinkTitle(generatedTitle.trim());
+      toast.success("Title generated");
+    } catch (e: any) {
+      toast.error(e.message || "Auto-title failed");
+    } finally {
+      setAiAutoTitle(false);
+    }
+  };
+
+  const handleFormatNote = async () => {
+    if (!isConfigured || !config) { setAiSettingsOpen(true); return; }
+    
+    if (!noteBody.trim()) {
+      toast.error("Add some content first");
+      return;
+    }
+    
+    setAiFormatting(true);
+    try {
+      const { formatMarkdown, formatPlainText } = await import("@/lib/ai");
+      
+      if (noteFormat === "md") {
+        const formatted = await formatMarkdown(config, noteBody);
+        setNoteBody(formatted.trim());
+        toast.success("Note formatted with markdown");
+      } else {
+        const formatted = await formatPlainText(config, noteBody);
+        setNoteBody(formatted.trim());
+        toast.success("Note formatted");
+      }
+    } catch (e: any) {
+      toast.error(e.message || "Formatting failed");
+    } finally {
+      setAiFormatting(false);
+    }
+  };
+
   const handleSummarize = async () => {
     if (!isConfigured || !config) { setAiSettingsOpen(true); return; }
     
     // Get current content based on tab
     let title = "", description = "", content = "";
-    if (tab === "link") {
-      title = linkTitle;
-      description = linkDesc;
-      content = "";
-    } else if (tab === "note") {
+    if (tab === "note") {
       title = noteTitle;
       description = "";
       content = noteBody;
@@ -333,9 +384,7 @@ export const AddItemDialog = ({ open, onOpenChange, onAdd, onUpdate, initialUrl,
     try {
       const summary = await summarizeContent(config, title, description, content);
       // Set description based on tab
-      if (tab === "link") {
-        setLinkDesc(summary.trim());
-      } else if (tab === "note") {
+      if (tab === "note") {
         setNoteBody((prev) => (prev ? prev + "\n\n" : "") + summary.trim());
       } else {
         setIdeaText((prev) => (prev ? prev + "\n\n" : "") + summary.trim());
@@ -510,12 +559,12 @@ export const AddItemDialog = ({ open, onOpenChange, onAdd, onUpdate, initialUrl,
               </span>
               <button
                 type="button"
-                onClick={handleSummarize}
-                disabled={aiSummarizing || (!linkTitle && !url)}
+                onClick={handleAutoTitle}
+                disabled={aiAutoTitle || !url}
                 className="inline-flex items-center gap-1.5 px-3 h-8 rounded-full text-xs bg-muted hover:bg-accent transition-colors disabled:opacity-40"
               >
-                {aiSummarizing ? <Loader2 className="w-3 h-3 animate-spin" /> : "📝"}
-                Summarize
+                {aiAutoTitle ? <Loader2 className="w-3 h-3 animate-spin" /> : "✨"}
+                Auto Title
               </button>
               <button
                 type="button"
@@ -576,41 +625,93 @@ export const AddItemDialog = ({ open, onOpenChange, onAdd, onUpdate, initialUrl,
 
             {noteFormat === "md" && (
               <div className="flex items-center justify-between flex-wrap gap-2">
-                <div className="flex items-center gap-1">
-                  <Button size="sm" variant="ghost" onClick={() => wrapMd("**")} className="h-8 w-8 p-0" title="Bold"><Bold className="w-3.5 h-3.5" /></Button>
-                  <Button size="sm" variant="ghost" onClick={() => wrapMd("*")} className="h-8 w-8 p-0" title="Italic"><Italic className="w-3.5 h-3.5" /></Button>
-                  <Button size="sm" variant="ghost" onClick={() => wrapMd("\n## ", "")} className="h-8 w-8 p-0" title="Heading"><Heading2 className="w-3.5 h-3.5" /></Button>
-                  <Button size="sm" variant="ghost" onClick={() => wrapMd("\n- ", "")} className="h-8 w-8 p-0" title="List"><List className="w-3.5 h-3.5" /></Button>
-                  <Button size="sm" variant="ghost" onClick={() => wrapMd("`")} className="h-8 w-8 p-0" title="Code"><Code className="w-3.5 h-3.5" /></Button>
+                <div className="flex items-center gap-1 flex-wrap">
+                  <Button size="sm" variant="ghost" onClick={() => wrapMd("**")} className="h-8 w-8 p-0" title="Bold (Ctrl+B)"><Bold className="w-3.5 h-3.5" /></Button>
+                  <Button size="sm" variant="ghost" onClick={() => wrapMd("*")} className="h-8 w-8 p-0" title="Italic (Ctrl+I)"><Italic className="w-3.5 h-3.5" /></Button>
+                  <Button size="sm" variant="ghost" onClick={() => wrapMd("~~")} className="h-8 w-8 p-0" title="Strikethrough"><Strikethrough className="w-3.5 h-3.5" /></Button>
+                  <div className="w-px h-5 bg-border mx-0.5" />
+                  <Button size="sm" variant="ghost" onClick={() => wrapMd("\n# ", "")} className="h-8 w-8 p-0" title="Heading 1"><Heading className="w-3.5 h-3.5" /></Button>
+                  <Button size="sm" variant="ghost" onClick={() => wrapMd("\n## ", "")} className="h-8 w-8 p-0" title="Heading 2"><Heading2 className="w-3.5 h-3.5" /></Button>
+                  <Button size="sm" variant="ghost" onClick={() => wrapMd("\n### ", "")} className="h-8 w-8 p-0" title="Heading 3"><Heading3 className="w-3.5 h-3.5" /></Button>
+                  <div className="w-px h-5 bg-border mx-0.5" />
+                  <Button size="sm" variant="ghost" onClick={() => wrapMd("\n- ", "")} className="h-8 w-8 p-0" title="Bullet List"><List className="w-3.5 h-3.5" /></Button>
+                  <Button size="sm" variant="ghost" onClick={() => wrapMd("\n1. ", "")} className="h-8 w-8 p-0" title="Numbered List"><ListOrdered className="w-3.5 h-3.5" /></Button>
+                  <Button size="sm" variant="ghost" onClick={() => wrapMd("\n- [ ] ", "")} className="h-8 w-8 p-0" title="Task List"><CheckSquare className="w-3.5 h-3.5" /></Button>
+                  <div className="w-px h-5 bg-border mx-0.5" />
+                  <Button size="sm" variant="ghost" onClick={() => wrapMd("`")} className="h-8 w-8 p-0" title="Inline Code"><Code className="w-3.5 h-3.5" /></Button>
+                  <Button size="sm" variant="ghost" onClick={() => wrapMd("\n```\n", "\n```\n")} className="h-8 w-8 p-0" title="Code Block"><Code className="w-3.5 h-3.5" /></Button>
+                  <div className="w-px h-5 bg-border mx-0.5" />
                   <Button size="sm" variant="ghost" onClick={() => wrapMd("[", "](url)")} className="h-8 w-8 p-0" title="Link"><LinkIcon className="w-3.5 h-3.5" /></Button>
+                  <Button size="sm" variant="ghost" onClick={() => wrapMd("![alt](", ")")} className="h-8 w-8 p-0" title="Image - Use direct image URL (e.g., from Imgur, Cloudinary)"><Image className="w-3.5 h-3.5" /></Button>
+                  <div className="w-px h-5 bg-border mx-0.5" />
                   <Button size="sm" variant="ghost" onClick={() => wrapMd("\n> ", "")} className="h-8 w-8 p-0" title="Quote"><Quote className="w-3.5 h-3.5" /></Button>
+                  <Button size="sm" variant="ghost" onClick={() => wrapMd("\n---\n", "")} className="h-8 w-8 p-0" title="Horizontal Rule"><Minus className="w-3.5 h-3.5" /></Button>
+                  <Button 
+                    size="sm" 
+                    variant="ghost" 
+                    onClick={() => {
+                      const ta = noteRef.current;
+                      if (!ta) return;
+                      const start = ta.selectionStart;
+                      const tableTemplate = "\n| Header 1 | Header 2 | Header 3 |\n|----------|----------|----------|\n| Cell 1   | Cell 2   | Cell 3   |\n| Cell 4   | Cell 5   | Cell 6   |\n";
+                      const next = noteBody.slice(0, start) + tableTemplate + noteBody.slice(start);
+                      setNoteBody(next);
+                      requestAnimationFrame(() => {
+                        ta.focus();
+                        ta.setSelectionRange(start + tableTemplate.length, start + tableTemplate.length);
+                      });
+                    }} 
+                    className="h-8 w-8 p-0" 
+                    title="Table"
+                  >
+                    <Table className="w-3.5 h-3.5" />
+                  </Button>
                 </div>
                 <div className="flex items-center gap-1">
                   <Popover>
                     <PopoverTrigger asChild>
-                      <Button size="sm" variant="ghost" className="h-7 w-7 p-0" title="Help">
+                      <Button size="sm" variant="ghost" className="h-7 w-7 p-0" title="Markdown Help">
                         <HelpCircle className="w-3.5 h-3.5" />
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-80" align="end">
+                    <PopoverContent className="w-96" align="end">
                       <div className="space-y-3 text-sm">
                         <div>
-                          <h4 className="font-semibold mb-1">Markdown Format</h4>
-                          <p className="text-xs text-muted-foreground">
-                            Use markdown syntax for rich formatting: **bold**, *italic*, ## headings, - lists, `code`, [links](url), and &gt; quotes.
-                          </p>
+                          <h4 className="font-semibold mb-2">Markdown Formatting Guide</h4>
                         </div>
-                        <div>
-                          <h4 className="font-semibold mb-1">Line Breaks</h4>
-                          <p className="text-xs text-muted-foreground">
-                            In Markdown: Add two spaces at end of line, or use <code className="text-xs bg-muted px-1 rounded">&lt;br&gt;</code> tag for manual breaks. Double Enter creates new paragraph.
-                          </p>
-                        </div>
-                        <div>
-                          <h4 className="font-semibold mb-1">Plain Text Format</h4>
-                          <p className="text-xs text-muted-foreground">
-                            Plain text preserves all line breaks exactly as typed. No formatting applied.
-                          </p>
+                        <div className="space-y-2 text-xs">
+                          <div>
+                            <p className="font-medium mb-1">Text Formatting:</p>
+                            <code className="block bg-muted px-2 py-1 rounded">**bold**, *italic*, ~~strikethrough~~</code>
+                          </div>
+                          <div>
+                            <p className="font-medium mb-1">Headings:</p>
+                            <code className="block bg-muted px-2 py-1 rounded"># H1, ## H2, ### H3</code>
+                          </div>
+                          <div>
+                            <p className="font-medium mb-1">Lists:</p>
+                            <code className="block bg-muted px-2 py-1 rounded whitespace-pre">- Bullet list, 1. Numbered list, - [ ] Task list</code>
+                          </div>
+                          <div>
+                            <p className="font-medium mb-1">Code:</p>
+                            <code className="block bg-muted px-2 py-1 rounded whitespace-pre">`inline code`, ``` code block ```</code>
+                          </div>
+                          <div>
+                            <p className="font-medium mb-1">Links & Images:</p>
+                            <code className="block bg-muted px-2 py-1 rounded whitespace-pre">[link text](url), ![alt text](image-url)</code>
+                            <p className="text-muted-foreground mt-1">For images, use direct URLs from Imgur, Cloudinary, or similar services</p>
+                          </div>
+                          <div>
+                            <p className="font-medium mb-1">Other:</p>
+                            <code className="block bg-muted px-2 py-1 rounded whitespace-pre">&gt; Quote, --- Horizontal rule
+| Header | Header |
+|--------|--------|
+| Cell   | Cell   |</code>
+                          </div>
+                          <div>
+                            <p className="font-medium mb-1">Line Breaks:</p>
+                            <p className="text-muted-foreground">Add two spaces at end of line, or use &lt;br&gt; tag. Double Enter creates new paragraph.</p>
+                          </div>
                         </div>
                       </div>
                     </PopoverContent>
@@ -623,8 +724,93 @@ export const AddItemDialog = ({ open, onOpenChange, onAdd, onUpdate, initialUrl,
             )}
 
             {preview && noteFormat === "md" ? (
-              <div className="min-h-[200px] rounded-xl border bg-muted/30 p-4 prose prose-sm max-w-none dark:prose-invert prose-headings:font-display prose-a:text-primary prose-blockquote:border-l-primary prose-blockquote:bg-primary/5 prose-blockquote:italic prose-blockquote:font-serif animate-fade-in">
-                <ReactMarkdown rehypePlugins={[rehypeRaw]}>{noteBody || "*Nothing to preview yet…*"}</ReactMarkdown>
+              <div className="min-h-[200px] rounded-xl border bg-muted/30 p-4 animate-fade-in">
+                <ReactMarkdown 
+                  remarkPlugins={[remarkGfm, remarkBreaks]} 
+                  rehypePlugins={[rehypeRaw]}
+                  components={{
+                    // Style headings with proper sizing
+                    h1: ({ children }) => <h1 className="text-2xl font-bold mb-3 mt-4 first:mt-0 font-display">{children}</h1>,
+                    h2: ({ children }) => <h2 className="text-xl font-bold mb-2.5 mt-3 first:mt-0 font-display">{children}</h2>,
+                    h3: ({ children }) => <h3 className="text-lg font-semibold mb-2 mt-2.5 first:mt-0 font-display">{children}</h3>,
+                    h4: ({ children }) => <h4 className="text-base font-semibold mb-1.5 mt-2 first:mt-0">{children}</h4>,
+                    h5: ({ children }) => <h5 className="text-sm font-semibold mb-1.5 mt-2 first:mt-0">{children}</h5>,
+                    h6: ({ children }) => <h6 className="text-sm font-medium mb-1 mt-1.5 first:mt-0">{children}</h6>,
+                    // Style paragraphs
+                    p: ({ children }) => <p className="mb-3 last:mb-0 leading-relaxed">{children}</p>,
+                    // Style lists
+                    ul: ({ children }) => <ul className="list-disc pl-5 mb-3 space-y-1">{children}</ul>,
+                    ol: ({ children }) => <ol className="list-decimal pl-5 mb-3 space-y-1">{children}</ol>,
+                    li: ({ children }) => <li className="leading-relaxed">{children}</li>,
+                    // Style code
+                    code: ({ className, children, ...props }) => {
+                      const isBlock = className?.includes("language-");
+                      if (isBlock) {
+                        return (
+                          <div className="my-3 rounded-lg overflow-x-auto bg-muted border border-border/40">
+                            <pre className="p-3 text-sm"><code className={className} {...props}>{children}</code></pre>
+                          </div>
+                        );
+                      }
+                      return (
+                        <code className="px-1.5 py-0.5 rounded bg-muted text-sm font-mono border border-border/30" {...props}>{children}</code>
+                      );
+                    },
+                    pre: ({ children }) => <>{children}</>,
+                    // Style links
+                    a: ({ href, children }) => (
+                      <a href={href} target="_blank" rel="noreferrer" className="text-primary underline underline-offset-2 hover:text-primary/80">
+                        {children}
+                      </a>
+                    ),
+                    // Style images
+                    img: ({ src, alt }) => (
+                      <img src={src} alt={alt} className="max-w-full h-auto rounded-lg border border-border/40 my-3" />
+                    ),
+                    // Style blockquote
+                    blockquote: ({ children }) => (
+                      <blockquote className="border-l-4 border-primary/40 pl-4 my-3 italic text-muted-foreground bg-primary/5 py-2 rounded-r">
+                        {children}
+                      </blockquote>
+                    ),
+                    // Style tables
+                    table: ({ children }) => (
+                      <div className="overflow-x-auto my-3 rounded-lg border border-gray-400 dark:border-gray-600">
+                        <table className="min-w-full text-sm">{children}</table>
+                      </div>
+                    ),
+                    thead: ({ children }) => <thead className="bg-muted/60">{children}</thead>,
+                    tbody: ({ children }) => <tbody>{children}</tbody>,
+                    tr: ({ children }) => <tr className="border-b border-gray-400 dark:border-gray-600 last:border-0">{children}</tr>,
+                    th: ({ children }) => <th className="px-3 py-2 text-left font-semibold border-b border-gray-400 dark:border-gray-600 border-r border-gray-400 dark:border-gray-600 last:border-r-0">{children}</th>,
+                    td: ({ children }) => <td className="px-3 py-2 border-r border-gray-400 dark:border-gray-600 last:border-r-0">{children}</td>,
+                    // Style hr
+                    hr: () => <hr className="my-4 border-border/40" />,
+                    // Style strong/bold
+                    strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+                    // Style em/italic
+                    em: ({ children }) => <em className="italic">{children}</em>,
+                    // Style strikethrough (del tag from GFM)
+                    del: ({ children }) => <del className="line-through opacity-70">{children}</del>,
+                    // Style task list checkboxes (input from GFM)
+                    input: ({ type, checked, ...props }) => {
+                      if (type === 'checkbox') {
+                        return (
+                          <input 
+                            type="checkbox" 
+                            checked={checked} 
+                            disabled 
+                            className="mr-2 align-middle cursor-not-allowed" 
+                            {...props} 
+                          />
+                        );
+                      }
+                      return <input type={type} {...props} />;
+                    },
+                  }}
+                >
+                  {noteBody || "*Nothing to preview yet…*"}
+                </ReactMarkdown>
               </div>
             ) : (
               <Textarea ref={noteRef} placeholder={noteFormat === "md" ? "Write your note in **markdown**…" : "Write your note in plain text…"}
@@ -646,6 +832,24 @@ export const AddItemDialog = ({ open, onOpenChange, onAdd, onUpdate, initialUrl,
               <span className="flex items-center gap-1 text-xs text-muted-foreground">
                 <Sparkles className="w-3.5 h-3.5 text-primary" /> AI Assist
               </span>
+              <button
+                type="button"
+                onClick={() => setAiWriterOpen(true)}
+                disabled={!isConfigured}
+                className="inline-flex items-center gap-1.5 px-3 h-8 rounded-full text-xs bg-muted hover:bg-accent transition-colors disabled:opacity-40"
+              >
+                ✍️ AI Writer
+              </button>
+              <button
+                type="button"
+                onClick={handleFormatNote}
+                disabled={aiFormatting || !noteBody}
+                className="inline-flex items-center gap-1.5 px-3 h-8 rounded-full text-xs bg-muted hover:bg-accent transition-colors disabled:opacity-40"
+                title={noteFormat === "md" ? "Format with markdown" : "Format plain text"}
+              >
+                {aiFormatting ? <Loader2 className="w-3 h-3 animate-spin" /> : "✨"}
+                AI Format
+              </button>
               <button
                 type="button"
                 onClick={handleSummarize}
@@ -714,6 +918,14 @@ export const AddItemDialog = ({ open, onOpenChange, onAdd, onUpdate, initialUrl,
               </span>
               <button
                 type="button"
+                onClick={() => setAiWriterOpen(true)}
+                disabled={!isConfigured}
+                className="inline-flex items-center gap-1.5 px-3 h-8 rounded-full text-xs bg-muted hover:bg-accent transition-colors disabled:opacity-40"
+              >
+                ✍️ AI Writer
+              </button>
+              <button
+                type="button"
                 onClick={handleSummarize}
                 disabled={aiSummarizing || !ideaText}
                 className="inline-flex items-center gap-1.5 px-3 h-8 rounded-full text-xs bg-muted hover:bg-accent transition-colors disabled:opacity-40"
@@ -754,6 +966,21 @@ export const AddItemDialog = ({ open, onOpenChange, onAdd, onUpdate, initialUrl,
         </Tabs>
         
         <AISettingsDialog open={aiSettingsOpen} onOpenChange={setAiSettingsOpen} />
+        
+        <AIWriterDialog
+          open={aiWriterOpen}
+          onOpenChange={setAiWriterOpen}
+          onInsert={(text) => {
+            if (tab === "note") {
+              setNoteBody((prev) => (prev ? prev + "\n\n" + text : text));
+            } else if (tab === "idea") {
+              setIdeaText((prev) => (prev ? prev + "\n\n" + text : text));
+            }
+          }}
+          onOpenAISettings={() => setAiSettingsOpen(true)}
+          format={tab === "note" ? noteFormat : "txt"}
+          context={tab === "note" ? noteBody : ideaText}
+        />
       </DialogContent>
     </Dialog>
   );

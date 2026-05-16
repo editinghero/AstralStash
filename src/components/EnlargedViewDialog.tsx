@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/button";
 import { X, Pencil, Pin, Trash2 } from "lucide-react";
 import { StashItem } from "@/lib/stash";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import remarkBreaks from "remark-breaks";
 import rehypeRaw from "rehype-raw";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -121,7 +123,7 @@ export const EnlargedViewDialog = ({ item, open, onOpenChange, onEdit, onPin, on
           {/* Content */}
           {item.content && (
             <motion.div 
-              className="prose prose-lg max-w-none prose-headings:font-display prose-p:my-3 prose-a:text-primary break-words"
+              className="max-w-none break-words"
               style={{ color: `${pastelInk}dd` }}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -130,7 +132,57 @@ export const EnlargedViewDialog = ({ item, open, onOpenChange, onEdit, onPin, on
               {isNote && item.format === "txt" ? (
                 <pre className="whitespace-pre-wrap font-sans text-base leading-relaxed">{item.content}</pre>
               ) : (
-                <ReactMarkdown rehypePlugins={[rehypeRaw]}>{item.content}</ReactMarkdown>
+                <ReactMarkdown 
+                  remarkPlugins={[remarkGfm, remarkBreaks]} 
+                  rehypePlugins={[rehypeRaw]}
+                  components={{
+                    h1: ({ children }) => <h1 className="text-2xl font-bold mb-3 mt-4 first:mt-0 font-display">{children}</h1>,
+                    h2: ({ children }) => <h2 className="text-xl font-bold mb-2.5 mt-3 first:mt-0 font-display">{children}</h2>,
+                    h3: ({ children }) => <h3 className="text-lg font-semibold mb-2 mt-2.5 first:mt-0 font-display">{children}</h3>,
+                    h4: ({ children }) => <h4 className="text-base font-semibold mb-1.5 mt-2 first:mt-0">{children}</h4>,
+                    p: ({ children }) => <p className="my-3">{children}</p>,
+                    ul: ({ children }) => <ul className="list-disc pl-5 my-3 space-y-1">{children}</ul>,
+                    ol: ({ children }) => <ol className="list-decimal pl-5 my-3 space-y-1">{children}</ol>,
+                    li: ({ children }) => <li className="leading-relaxed">{children}</li>,
+                    code: ({ className, children, ...props }) => {
+                      const isBlock = className?.includes("language-");
+                      if (isBlock) {
+                        return (
+                          <div className="my-3 rounded-lg overflow-x-auto bg-white/60 border border-white/40">
+                            <pre className="p-3 text-sm"><code className={className} {...props}>{children}</code></pre>
+                          </div>
+                        );
+                      }
+                      return <code className="px-1.5 py-0.5 rounded bg-white/60 text-sm font-mono" {...props}>{children}</code>;
+                    },
+                    pre: ({ children }) => <>{children}</>,
+                    a: ({ href, children }) => <a href={href} target="_blank" rel="noreferrer" className="text-primary underline underline-offset-2 hover:text-primary/80">{children}</a>,
+                    img: ({ src, alt }) => <img src={src} alt={alt} className="max-w-full h-auto rounded-lg border border-white/40 my-3" />,
+                    blockquote: ({ children }) => <blockquote className="border-l-4 border-white/40 pl-4 my-3 italic opacity-80">{children}</blockquote>,
+                    table: ({ children }) => (
+                      <div className="overflow-x-auto my-2 rounded-lg border border-gray-400">
+                        <table className="min-w-full text-sm">{children}</table>
+                      </div>
+                    ),
+                    thead: ({ children }) => <thead className="bg-white/40">{children}</thead>,
+                    tbody: ({ children }) => <tbody>{children}</tbody>,
+                    tr: ({ children }) => <tr className="border-b border-gray-500 last:border-0">{children}</tr>,
+                    th: ({ children }) => <th className="px-3 py-2 text-left font-semibold border-b border-gray-400 border-r border-gray-400 last:border-r-0">{children}</th>,
+                    td: ({ children }) => <td className="px-3 py-2 border-r border-gray-400 last:border-r-0">{children}</td>,
+                    hr: () => <hr className="my-4 border-white/30" />,
+                    strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+                    em: ({ children }) => <em className="italic">{children}</em>,
+                    del: ({ children }) => <del className="line-through opacity-70">{children}</del>,
+                    input: ({ type, checked, ...props }) => {
+                      if (type === 'checkbox') {
+                        return <input type="checkbox" checked={checked} disabled className="mr-1.5 align-middle cursor-not-allowed" {...props} />;
+                      }
+                      return <input type={type} {...props} />;
+                    },
+                  }}
+                >
+                  {item.content}
+                </ReactMarkdown>
               )}
             </motion.div>
           )}
